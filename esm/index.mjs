@@ -1,7 +1,7 @@
 let CSSVars = {};
 
 
-export function doCSSVarConversion(value) {
+function doCSSVarConversion(value) {
     let asNumber = parseFloat(value);
 
     if (!isNaN(asNumber)) {
@@ -10,14 +10,14 @@ export function doCSSVarConversion(value) {
 }
 
 
-export function append(parent, ...elements) {
+function append(parent, ...elements) {
     for (let element of elements) {
         parent.appendChild(element);
     }
 }
 
 
-export function toTitleCase(text) {
+function toTitleCase(text) {
     let head = text[0];
     let tail = text.slice(1);
 
@@ -26,7 +26,7 @@ export function toTitleCase(text) {
 }
 
 
-export function getCSSVar(property) {
+function getCSSVar(property) {
     let cached = CSSVars[property];
 
     if (cached) {
@@ -42,7 +42,7 @@ export function getCSSVar(property) {
 }
 
 
-export function getCSSVars() {
+function getCSSVars() {
     let computedStyle = window.getComputedStyle(document.documentElement);
 
     for (let property of computedStyle) {
@@ -56,3 +56,6 @@ export function getCSSVars() {
 
     return CSSVars;
 }
+
+
+module.exports = { append, getCSSVar, getCSSVars, toTitleCase };
