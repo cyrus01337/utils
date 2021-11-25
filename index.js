@@ -10,9 +10,9 @@ function doCSSVarConversion(value) {
 }
 
 
-export let isOutOfBounds = element => !!element.querySelector(":hover");
-export function nullCallback() {}
-export function getCSSVar(property) {
+let isOutOfBounds = element => !!element.querySelector(":hover");
+function nullCallback() {}
+function getCSSVar(property) {
     let cached = CSSVars[property];
 
     if (cached) {
@@ -28,7 +28,7 @@ export function getCSSVar(property) {
 }
 
 
-export function getCSSVars() {
+function getCSSVars() {
     let computedStyle = window.getComputedStyle(
         document.documentElement
     );
@@ -48,14 +48,14 @@ export function getCSSVars() {
 }
 
 
-export function append(parent, ...elements) {
+function append(parent, ...elements) {
     for (const element of elements) {
         parent.appendChild(element);
     }
 }
 
 
-export function toTitleCase(text) {
+function toTitleCase(text) {
     let head = text[0];
     let tail = text.slice(1);
 
@@ -63,12 +63,12 @@ export function toTitleCase(text) {
 }
 
 
-export function normaliseMultiLineString(text) {
+function normaliseMultiLineString(text) {
     return text.trim().replaceAll(/\t/g, "").replaceAll(/[\n]+/g, " ").replaceAll(/ {2,}/g, " ");
 }
 
 
-export function addMultipleEventsListener(element, ...args) {
+function addMultipleEventsListener(element, ...args) {
     let listener = args[args.length - 1];
 
     if (typeof listener !== "function") {
@@ -81,6 +81,19 @@ export function addMultipleEventsListener(element, ...args) {
 }
 
 
-export function sleep(seconds) {
+function sleep(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds));
 }
+
+
+module.exports = {
+	addMultipleEventsListener,
+	append,
+	getCSSVar,
+	getCSSVars,
+    isOutOfBounds,
+	normaliseMultiLineString,
+	sleep,
+	toTitleCase,
+    nullCallback
+};
