@@ -1,4 +1,8 @@
 --!nolint UninitializedLocal
+local HTTP = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local TS = game:GetService("TweenService")
+
 local Module = require(script.Module)
 local Utils = Module.init(script)
 
@@ -8,7 +12,6 @@ function Utils.map(iterable, callback)
 
 	for k, v in pairs(iterable) do
 		ret[k] = callback(v)
-
 	end
 
 	return ret
@@ -33,15 +36,6 @@ function Utils.tobool(value)
 end
 
 
-function Utils.default(value, default)
-	if value == nil then
-		return default
-	end
-
-	return value
-end
-
-
 function Utils.capitalise(text)
 	local head = string.upper(text:sub(1, 1))
 	local tail = text:sub(2)
@@ -56,7 +50,7 @@ Utils.capitalize = Utils.capitalise
 
 
 function Utils.timeit(callback, iterations)
-	iterations = Utils.default(iterations, 10000)
+	iterations = if iterations ~= nil then iterations else 10000
 	local min, max, avg, achievable, message;
 	local sum = 0
 	local results = {}
@@ -165,8 +159,8 @@ end
 
 
 function Utils.abbreviate(number, decimalPlaces, limit)
-	decimalPlaces = Utils.default(decimalPlaces, 0)
-	limit = Utils.default(limit, 999)
+	decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
+	limit = if limit ~= nil then limit else 999
 
 	if number > limit then
 		local spliced;
@@ -257,7 +251,13 @@ function Utils.debounceTable(callback, returning)
 end
 
 
-function Utils.choice(iterable)
+function Utils.choice(iterable, isArray)
+	isArray = if isArray ~= nil then isArray else false
+
+	if isArray then
+		return iterable[math.random(1, #iterable)]
+	end
+
 	local keys = {}
 
 	for key, _ in pairs(iterable) do
@@ -265,6 +265,174 @@ function Utils.choice(iterable)
 	end
 
 	return keys[math.random(1, #keys)]
+end
+
+
+function Utils.findPlayerFromAncestor(part, recursive)
+	recursive = if recursive ~= nil then recursive else false
+
+	local modelFound;
+
+	while not modelFound do
+		modelFound = part:FindFirstAncestorOfClass("Model")
+
+		if not modelFound then break end
+
+		local playerFound = Players:GetPlayerFromCharacter(modelFound)
+
+		if playerFound or not recursive then
+			return playerFound
+		end
+
+		part = modelFound
+	end
+
+	return nil
+end
+
+
+function Utils.toVSSnippet(_script, name, prefix, description)
+	local isString = typeof(_script) == "string"
+	local isScript = typeof(_script) == "Instance" and _script:IsA("BaseScript")
+
+	assert(type(name) == "string" and (isString or isScript))
+
+	prefix = if prefix ~= nil then prefix else ""
+	description = if description ~= nil then description else ""
+	local source, previous;
+	local snippetInfo = {
+		body = {},
+		description = description,
+		prefix = prefix
+	}
+
+	if isString then
+		source = _script
+	elseif isScript then
+		source = _script.Source
+	end
+
+	local newlines = 0
+	local lines = source:split("\n")
+
+	for _, line in ipairs(lines) do
+		print(line)
+		if line == "" then
+			newlines += 1
+		elseif newlines > 0 then
+			previous ..= string.rep("\n", newlines)
+			newlines = 0
+
+			table.insert(snippetInfo.body, previous)
+		else
+			previous = line
+
+			table.insert(snippetInfo.body, line)
+		end
+	end
+
+	local wrapped = {[name] = snippetInfo}
+	local snippet = HTTP:JSONEncode(wrapped)
+
+	print(snippet)
+end
+
+
+function Utils.playTweenAwait(instance, tweenInfo, properties)
+	local seconds;
+	local tween = instance
+
+	if not instance:IsA("Tween") then
+		tween = TS:Create(instance, tweenInfo, properties)
+		seconds = tweenInfo.Time
+	else
+		seconds = tween.TweenInfo.Time
+	end
+
+	tween:Play()
+	-- incase the tween completes very quickly and the event fires before the
+	-- script has time to wait for it, this is alternatively used
+	task.wait(seconds)
+end
+
+
+function Utils.enumerate(container, start)
+	start = if start ~= nil then start else 0
+	local key, value;
+
+	return function()
+		start += 1
+		key, value = next(container, key)
+
+		if value == nil then
+			return value
+		end
+
+		return start, key, value
+	end
+end
+
+
+function Utils.zip(...)
+	local containers = {...}
+	local nilCount = 0
+	local containersLength = #containers
+	local keys = {}
+
+	return function()
+		local values = {}
+
+		for i = 1, containersLength do
+			local key, value;
+			local container = containers[i]
+			local previous = keys[i]
+
+			if typeof(container) == "table" then
+				key, value = next(container, previous)
+			else
+				key, value = container()
+
+				if value == nil then
+					value = key
+					key = nil
+				end
+			end
+
+			if value == nil then
+				nilCount += 1
+			else
+				keys[i] = key
+
+				table.insert(values, value)
+			end
+		end
+
+		if nilCount == containersLength then return end
+
+		return table.unpack(values)
+	end
+end
+
+
+function Utils.keys(container)
+	local key, _;
+
+	return function()
+		key, _ = next(container, key)
+
+		return key
+	end
+end
+
+
+function Utils.values(container)
+	local key, value;
+
+	return function()
+		key, value = next(container, key)
+
+		return value
+	end
 end
 
 
