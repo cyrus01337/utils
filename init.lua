@@ -46,7 +46,7 @@ Utils.capitalize = Utils.capitalise
 
 function Utils.timeit(callback, iterations)
 	iterations = if iterations ~= nil then iterations else 10000
-	local min, max, avg, achievable, message;
+	local min, max, message;
 	local sum = 0
 
 	for _ = 1, iterations do
@@ -66,18 +66,23 @@ function Utils.timeit(callback, iterations)
 		end
 	end
 
-	avg = sum / iterations
-	achievable = 1 / avg
+	local avg = sum / iterations
+	local achievable = 1 / avg
+
+	if achievable < 10 then
+
+	end
+
 	message = (
 		"Results (%d iterations):\n\n" ..
 
 		"Min: %.9fs\n" ..
 		"Max: %.9fs\n" ..
 		"Avg: %.9fs\n" ..
-		"Consistently Achievable: %d/s"
+		"Consistently Achievable: %s/s"
 	)
 
-	warn(message:format(iterations, min, max, avg, achievable))
+	warn(message:format(iterations, min, max, avg, tostring(achievable)))
 end
 
 
@@ -465,6 +470,15 @@ function Utils.resolvePath(path)
 	end
 
 	return instance
+end
+
+
+function Utils.round(number, places)
+	places = if places then places else 0
+
+	local power = 10 ^ places
+
+	return math.floor(number * power) / power
 end
 
 
