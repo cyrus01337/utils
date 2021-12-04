@@ -48,7 +48,6 @@ function Utils.timeit(callback, iterations)
 	iterations = if iterations ~= nil then iterations else 10000
 	local min, max, avg, achievable, message;
 	local sum = 0
-	local results = {}
 
 	for _ = 1, iterations do
 		local start = os.clock()
@@ -442,6 +441,30 @@ function Utils.create(instanceData)
 	end
 
 	return instances
+end
+
+
+function Utils.resolvePath(path)
+	if path == nil then return end
+
+	local count = 0
+	local instance = game
+
+	for name in path:split(".") do
+		count += 1
+
+		if name:lower() == "game" and count == 1 then
+			continue
+		end
+
+		local instanceFound = instance:FindFirstChild(name)
+
+		if not instanceFound then
+			return nil
+		end
+	end
+
+	return instance
 end
 
 
