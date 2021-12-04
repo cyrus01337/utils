@@ -1,4 +1,3 @@
-local env = getfenv()
 local ServicesMeta = {}
 local Services = {}
 

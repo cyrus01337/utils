@@ -26,11 +26,6 @@ function Utils.to(text, amount)
 end
 
 
-function Utils.print(...)
-	Utils.map({...}, print)
-end
-
-
 function Utils.tobool(value)
 	return not not value
 end
@@ -45,7 +40,7 @@ end
 
 
 -- alias only to capitalise on lazy americans loving their shorthands and
--- convert them into appreciating obvious acts of communism
+-- convert them into appreciating obvious acts of communism /j
 Utils.capitalize = Utils.capitalise
 
 
@@ -291,53 +286,6 @@ function Utils.findPlayerFromAncestor(part, recursive)
 end
 
 
-function Utils.toVSSnippet(_script, name, prefix, description)
-	local isString = typeof(_script) == "string"
-	local isScript = typeof(_script) == "Instance" and _script:IsA("BaseScript")
-
-	assert(type(name) == "string" and (isString or isScript))
-
-	prefix = if prefix ~= nil then prefix else ""
-	description = if description ~= nil then description else ""
-	local source, previous;
-	local snippetInfo = {
-		body = {},
-		description = description,
-		prefix = prefix
-	}
-
-	if isString then
-		source = _script
-	elseif isScript then
-		source = _script.Source
-	end
-
-	local newlines = 0
-	local lines = source:split("\n")
-
-	for _, line in ipairs(lines) do
-		print(line)
-		if line == "" then
-			newlines += 1
-		elseif newlines > 0 then
-			previous ..= string.rep("\n", newlines)
-			newlines = 0
-
-			table.insert(snippetInfo.body, previous)
-		else
-			previous = line
-
-			table.insert(snippetInfo.body, line)
-		end
-	end
-
-	local wrapped = {[name] = snippetInfo}
-	local snippet = HTTP:JSONEncode(wrapped)
-
-	print(snippet)
-end
-
-
 function Utils.playTweenAwait(instance, tweenInfo, properties)
 	local seconds;
 	local tween = instance
@@ -433,6 +381,67 @@ function Utils.values(container)
 
 		return value
 	end
+end
+
+
+function Utils.create(instanceData)
+	local lastKey;
+	local count = 0
+	local instances = {}
+	local parents = {}
+
+	for name, properties in pairs(instanceData) do
+		lastKey = name
+		local className = Utils.pop(properties, "ClassName")
+		local parent = Utils.pop(properties, "Parent")
+
+		if not className or typeof(className) ~= "string" then
+			local message = string.format('Skipping %s - invalid ClassName "%s" given', name, tostring(className))
+
+			warn(message)
+			continue
+		end
+
+		local instance = Instance.new(className)
+			  instance.Name = if properties.Name then properties.Name else name
+
+		for key, value in pairs(properties) do
+			instance[key] = value
+		end
+
+		local parentType = typeof(parent)
+
+		if parent and parentType == "Instance" then
+			instance.Parent = parent
+		elseif parentType == "string" then
+			local parentFound = parents[parent]
+
+			if parentFound then
+				instance.Parent = parentFound
+			else
+				parents[parent] = instance
+			end
+		end
+
+		count += 1
+		instances[name] = instance
+	end
+
+	for name, instance in pairs(parents) do
+		local parentFound = instances[name]
+
+		if parentFound then
+			instance.Parent = parentFound
+		end
+	end
+
+	if count == 1 then
+		instances = instances[lastKey]
+	elseif count == 0 then
+		instances = nil
+	end
+
+	return instances
 end
 
 
