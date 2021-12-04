@@ -56,21 +56,15 @@ function Utils.timeit(callback, iterations)
 
 		local difference = os.clock() - start
 		sum += difference
-
-		if not min or difference < min then
-			min = difference
-		end
-
-		if not max or difference > max then
-			max = difference
-		end
+		min = if not min or difference < min then difference else min
+		max = if not max or difference > max then difference else max
 	end
 
 	local avg = sum / iterations
 	local achievable = 1 / avg
 
 	if achievable < 10 then
-
+		achievable = Utils.round(achievable, 3)
 	end
 
 	message = (
@@ -96,16 +90,14 @@ end
 function Utils.parent(object, iterations)
 	-- suppresses and special-case nil.Parent errors by returning nil
 	local success, ret = pcall(function()
-		for i = 1, iterations do
+		for _ = 1, iterations do
 			object = object["Parent"]
 		end
 
 		return object
 	end)
 
-	if not success and ret ~= nil then
-		ret = nil
-	end
+	ret = if success then ret else nil
 
 	return ret
 end
@@ -130,18 +122,6 @@ function Utils.isOneOf(object, ...)
 	end
 
 	return false
-end
-
-
-function Utils.loaded(animationTrack, timeout)
-	timeout = timeout or math.huge
-	local start = time()
-
-	if animationTrack > 0 then return end
-
-	repeat
-		start += task.wait()
-	until animationTrack.Length > 0 or start > timeout
 end
 
 
@@ -290,12 +270,11 @@ function Utils.findPlayerFromAncestor(part, recursive)
 end
 
 
-function Utils.playTweenAwait(instance, tweenInfo, properties)
+function Utils.playTweenAwait(tween, tweenInfo, properties)
 	local seconds;
-	local tween = instance
 
-	if not instance:IsA("Tween") then
-		tween = TS:Create(instance, tweenInfo, properties)
+	if not tween:IsA("Tween") then
+		tween = TS:Create(tween, tweenInfo, properties)
 		seconds = tweenInfo.Time
 	else
 		seconds = tween.TweenInfo.Time
@@ -304,12 +283,15 @@ function Utils.playTweenAwait(instance, tweenInfo, properties)
 	tween:Play()
 	-- incase the tween completes very quickly and the event fires before the
 	-- script has time to wait for it, this is alternatively used
-	task.wait(seconds)
+	if tween.PlaybackState ~= Enum.PlaybackState.Completed then
+		tween.Completed:Wait()
+	end
 end
 
 
 function Utils.enumerate(container, start)
 	start = if start ~= nil then start else 0
+
 	local key, value;
 
 	return function()
