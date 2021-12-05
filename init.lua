@@ -46,6 +46,9 @@ Utils.capitalize = Utils.capitalise
 
 function Utils.timeit(callback, iterations)
 	iterations = if iterations ~= nil then iterations else 10000
+
+	assert(iterations > 0, "Cannot make iterations <= 0")
+
 	local min, max, message;
 	local sum = 0
 
