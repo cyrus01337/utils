@@ -1,2 +1,0 @@
-Handle the iterations being 0 or 1 more explicitly in Utils.timeit
-    Throw an error instead of letting it be implicitly handled with the for loop
