@@ -56,8 +56,8 @@ function append(parent, ...elements) {
 
 
 function toTitleCase(text) {
-    let head = text[0];
-    let tail = text.slice(1);
+    let head = text[0],
+        tail = text.slice(1);
 
     return head.toUpperCase() + tail.toLowerCase();
 }
@@ -75,7 +75,7 @@ function addMultipleEventsListener(element, ...args) {
         throw new Error("Callback not provided as final argument");
     }
 
-    for (let event of args) {
+    for (const event of args) {
         element.addEventListener(event, listener);
     }
 }
