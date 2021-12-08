@@ -56,10 +56,17 @@ function append(parent, ...elements) {
 
 
 function toTitleCase(text) {
-    let head = text[0],
-        tail = text.slice(1);
+    let toJoin = [];
 
-    return head.toUpperCase() + tail.toLowerCase();
+    for (const word of text.split(" ")) {
+        let head = word[0],
+            tail = word.slice(1);
+        let title = head.toUpperCase() + tail.toLowerCase();
+
+        toJoin.push(title);
+    }
+
+    return toJoin.join(" ");
 }
 
 
