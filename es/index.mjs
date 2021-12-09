@@ -12,6 +12,26 @@ function doCSSVarConversion(value) {
 
 let isOutOfBounds = element => !!element.querySelector(":hover");
 function nullCallback() {}
+function addMultipleEventsListener(element, ...args) {
+    let listener = args[args.length - 1];
+
+    if (typeof listener !== "function") {
+        throw new Error("Callback not provided as final argument");
+    }
+
+    for (const event of args) {
+        element.addEventListener(event, listener);
+    }
+}
+
+
+function append(parent, ...elements) {
+    for (const element of elements) {
+        parent.appendChild(element);
+    }
+}
+
+
 function getCSSVar(property) {
     let cached = CSSVars[property];
 
@@ -48,10 +68,22 @@ function getCSSVars() {
 }
 
 
-function append(parent, ...elements) {
-    for (const element of elements) {
-        parent.appendChild(element);
-    }
+function isObjectEmpty(object) {
+    if (!(object && Object.getPrototypeOf(object) === Object.prototype)) return;
+
+    let keys = Object.keys(object);
+
+    return keys.length === 0;
+}
+
+
+function normaliseMultiLineString(text) {
+    return text.trim().replaceAll(/\t/g, "").replaceAll(/[\n]+/g, " ").replaceAll(/ {2,}/g, " ");
+}
+
+
+function sleep(seconds) {
+    return new Promise(resolve => setTimeout(resolve, seconds));
 }
 
 
@@ -70,34 +102,12 @@ function toTitleCase(text) {
 }
 
 
-function normaliseMultiLineString(text) {
-    return text.trim().replaceAll(/\t/g, "").replaceAll(/[\n]+/g, " ").replaceAll(/ {2,}/g, " ");
-}
-
-
-function addMultipleEventsListener(element, ...args) {
-    let listener = args[args.length - 1];
-
-    if (typeof listener !== "function") {
-        throw new Error("Callback not provided as final argument");
-    }
-
-    for (const event of args) {
-        element.addEventListener(event, listener);
-    }
-}
-
-
-function sleep(seconds) {
-    return new Promise(resolve => setTimeout(resolve, seconds));
-}
-
-
 export default {
 	addMultipleEventsListener,
 	append,
 	getCSSVar,
 	getCSSVars,
+    isObjectEmpty,
     isOutOfBounds,
 	normaliseMultiLineString,
 	sleep,
