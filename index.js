@@ -1,3 +1,4 @@
+const WORD = /[a-z][a-z0-9]*(?:\b)*/gi;
 let CSSVars = {};
 
 
@@ -90,7 +91,7 @@ function sleep(seconds) {
 function toTitleCase(text) {
     let toJoin = [];
 
-    for (const word of text.split(" ")) {
+    for (const word of text.match(WORD)) {
         let head = word[0],
             tail = word.slice(1);
         let title = head.toUpperCase() + tail.toLowerCase();
