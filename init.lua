@@ -1,7 +1,8 @@
 --!nolint UninitializedLocal
 local HTTP = game:GetService("HttpService")
-local Players = game:GetService("Players")
 local TS = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Run = game:GetService("RunService")
 
 local Module = require(script.Module)
 local Utils = Module.init(script)
@@ -464,6 +465,26 @@ function Utils.round(number, places)
 	local power = 10 ^ places
 
 	return math.floor(number * power) / power
+end
+
+
+function Utils.requireAll(...)
+    local modules = {}
+
+    for _, path in ipairs({...}) do
+        local module = require(path)
+
+        table.insert(modules, module)
+    end
+
+    return table.unpack(modules)
+end
+
+
+function Utils.runInStudio(callback)
+    if Run:IsStudio() then return end
+
+    callback()
 end
 
 
