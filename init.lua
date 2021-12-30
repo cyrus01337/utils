@@ -275,16 +275,12 @@ end
 
 
 function Utils.playTweenAwait(tween, tweenInfo, properties)
-	local seconds;
-
 	if not tween:IsA("Tween") then
 		tween = TS:Create(tween, tweenInfo, properties)
-		seconds = tweenInfo.Time
-	else
-		seconds = tween.TweenInfo.Time
 	end
 
 	tween:Play()
+
 	-- incase the tween completes very quickly and the event fires before the
 	-- script has time to wait for it, this is alternatively used
 	if tween.PlaybackState ~= Enum.PlaybackState.Completed then
@@ -485,6 +481,40 @@ function Utils.runInStudio(callback)
     if Run:IsStudio() then return end
 
     callback()
+end
+
+
+function Utils.copy(container)
+	local copy = {}
+
+	for key, value in pairs(container) do
+		if typeof(key) == "number" then
+			table.insert(copy, key, value)
+		else
+			copy[key] = value
+		end
+	end
+
+	return copy
+end
+
+
+function Utils.deepcopy(container)
+	local copy = {}
+
+	for key, value in pairs(container) do
+		if typeof(value) == "table" then
+			value = Utils.deepcopy(value)
+		end
+
+		if typeof(key) == "number" then
+			table.insert(copy, key, value)
+		else
+			copy[key] = value
+		end
+	end
+
+	return copy
 end
 
 
