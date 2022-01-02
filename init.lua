@@ -129,12 +129,17 @@ function Utils.isOneOf(object, ...)
 end
 
 
-function Utils.pop(iterable, key)
+function Utils.pop(iterable, key, fallback)
 	if typeof(key) == "number" then
 		return table.remove(iterable, key)
 	end
 
 	local ret = iterable[key]
+
+	if ret == nil then
+		return fallback
+	end
+
 	iterable[key] = nil
 
 	return ret
