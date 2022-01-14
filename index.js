@@ -104,14 +104,14 @@ function toTitleCase(text) {
 
 
 module.exports = {
-	addMultipleEventsListener,
-	append,
-	getCSSVar,
-	getCSSVars,
+    addMultipleEventsListener,
+    append,
+    getCSSVar,
+    getCSSVars,
     isObjectEmpty,
     isOutOfBounds,
-	normaliseMultiLineString,
-	sleep,
-	toTitleCase,
+    normaliseMultiLineString,
+    sleep,
+    toTitleCase,
     nullCallback
 };
