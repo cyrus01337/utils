@@ -3,18 +3,18 @@ local Services = {}
 
 
 function ServicesMeta:__index(key)
-	if typeof(key) ~= "string" then
-		return nil
-	end
+    if typeof(key) ~= "string" then
+        return nil
+    end
 
-	local serviceFound = rawget(Services, key)
+    local serviceFound = rawget(Services, key)
 
-	if not serviceFound then
-		serviceFound = game:FindFirstChild(key) or game:GetService(key)
-		Services[key] = serviceFound
-	end
+    if not serviceFound then
+        serviceFound = game:FindFirstChild(key) or game:GetService(key)
+        Services[key] = serviceFound
+    end
 
-	return serviceFound
+    return serviceFound
 end
 
 
