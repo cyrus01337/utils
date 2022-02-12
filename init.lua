@@ -523,4 +523,21 @@ function Utils.deepcopy(container)
 end
 
 
+function Utils.produce(count, value)
+    local toUnpack = {}
+
+    for _ = 1, count do
+        local processed = value
+
+        if typeof(value) == "table" then
+            processed = Utils.deepcopy(value)
+        end
+
+        table.insert(toUnpack, processed)
+    end
+
+    return table.unpack(toUnpack)
+end
+
+
 return Utils
