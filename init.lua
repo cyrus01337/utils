@@ -1,11 +1,16 @@
 --!nolint UninitializedLocal
-local HTTP = game:GetService("HttpService")
 local TS = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Run = game:GetService("RunService")
 
-local Module = require(script.Module)
-local Utils = Module.init(script)
+local Table = require(script.Table)
+local UtilsMeta = {}
+local Utils = {}
+
+
+function UtilsMeta:__index(key)
+    return rawget(Utils, key) or Table[key]
+end
 
 
 function Utils.map(iterable, callback)
@@ -129,23 +134,6 @@ function Utils.isOneOf(object, ...)
 end
 
 
-function Utils.pop(iterable, key, fallback)
-    if typeof(key) == "number" then
-        return table.remove(iterable, key)
-    end
-
-    local ret = iterable[key]
-
-    if ret == nil then
-        return fallback
-    end
-
-    iterable[key] = nil
-
-    return ret
-end
-
-
 function Utils.abbreviate(number, decimalPlaces, limit)
     decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
     limit = if limit ~= nil then limit else 999
@@ -171,17 +159,6 @@ function Utils.abbreviate(number, decimalPlaces, limit)
     end
 
     return tostring(number)
-end
-
-
-function Utils.length(iterable)
-    local count = 0
-
-    for _, _ in pairs(iterable) do
-        count += 1
-    end
-
-    return count
 end
 
 
@@ -236,23 +213,6 @@ function Utils.debounceTable(callback, returning)
 
         return result
     end
-end
-
-
-function Utils.choice(iterable, isArray)
-    isArray = if isArray ~= nil then isArray else false
-
-    if isArray then
-        return iterable[math.random(1, #iterable)]
-    end
-
-    local keys = {}
-
-    for key, _ in pairs(iterable) do
-        table.insert(keys, key)
-    end
-
-    return keys[math.random(1, #keys)]
 end
 
 
@@ -489,55 +449,4 @@ function Utils.runInStudio(callback)
 end
 
 
-function Utils.copy(container)
-    local copy = {}
-
-    for key, value in pairs(container) do
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
-end
-
-
-function Utils.deepcopy(container)
-    local copy = {}
-
-    for key, value in pairs(container) do
-        if typeof(value) == "table" then
-            value = Utils.deepcopy(value)
-        end
-
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
-end
-
-
-function Utils.produce(count, value)
-    local toUnpack = {}
-
-    for _ = 1, count do
-        local processed = value
-
-        if typeof(value) == "table" then
-            processed = Utils.deepcopy(value)
-        end
-
-        table.insert(toUnpack, processed)
-    end
-
-    return table.unpack(toUnpack)
-end
-
-
-return Utils
+return setmetatable(Utils, UtilsMeta)
