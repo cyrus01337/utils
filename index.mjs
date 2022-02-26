@@ -1,18 +1,9 @@
+import dedent from "dedent-js";
+
 const WORD = /[a-z][a-z0-9]*(?:\b)*/gi;
 let CSSVars = {};
 
 
-function doCSSVarConversion(value) {
-    let asNumber = parseFloat(value);
-
-    if (!isNaN(asNumber)) {
-        return asNumber;
-    }
-}
-
-
-let isOutOfBounds = element => !!element.querySelector(":hover");
-function nullCallback() {}
 function addMultipleEventsListener(element, ...args) {
     let listener = args[args.length - 1];
 
@@ -33,12 +24,26 @@ function append(parent, ...elements) {
 }
 
 
+function format(text, properties) {
+    let doActualFormat = (_, matched) => properties[matched] || matched;
+
+    return text.replaceAll(/{([a-z0-9_]+)}/ig, doActualFormat);
+}
+
+
+function doCSSVarConversion(value) {
+    let asNumber = parseFloat(value);
+
+    if (!isNaN(asNumber)) {
+        return asNumber;
+    }
+}
+
+
 function getCSSVar(property) {
     let cached = CSSVars[property];
 
-    if (cached) {
-        return cached;
-    }
+    if (cached) return cached;
 
     let computedStyle = window.getComputedStyle(document.documentElement);
     let value = computedStyle.getPropertyValue(property);
@@ -69,6 +74,7 @@ function getCSSVars() {
 }
 
 
+let isOutOfBounds = element => !!element.querySelector(":hover");
 function isObjectEmpty(object) {
     if (!(object && Object.getPrototypeOf(object) === Object.prototype)) return;
 
@@ -78,11 +84,7 @@ function isObjectEmpty(object) {
 }
 
 
-function normaliseMultiLineString(text) {
-    return text.trim().replaceAll(/\t/g, "").replaceAll(/[\n]+/g, " ").replaceAll(/ {2,}/g, " ");
-}
-
-
+let normaliseMultiLineString = (text) => dedent(text);
 function sleep(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds));
 }
@@ -103,9 +105,13 @@ function toTitleCase(text) {
 }
 
 
-module.exports = {
+function nullCallback() {}
+
+
+export default {
     addMultipleEventsListener,
     append,
+    format,
     getCSSVar,
     getCSSVars,
     isObjectEmpty,

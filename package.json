@@ -1,0 +1,25 @@
+{
+    "name": "utils",
+    "version": "0.1.0",
+    "description": "Handy dandies I can use across all projects",
+    "main": "index.mjs",
+    "engines": {
+        "node": "16.x"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cyrus01337/utils.git"
+    },
+    "author": "cyrus01337",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/cyrus01337/utils/issues"
+    },
+    "homepage": "https://github.com/cyrus01337/utils#readme",
+    "dependencies": {
+        "dedent-js": "^1.0.1"
+    }
+}
