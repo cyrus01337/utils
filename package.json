@@ -1,6 +1,6 @@
 {
     "name": "utils",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Handy dandies I can use across all projects",
     "main": "index.mjs",
     "engines": {
