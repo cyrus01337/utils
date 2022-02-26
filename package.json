@@ -19,7 +19,7 @@
         "url": "https://github.com/cyrus01337/utils/issues"
     },
     "homepage": "https://github.com/cyrus01337/utils#readme",
-    "dependencies": {
+    "peerDependencies": {
         "dedent-js": "^1.0.1"
     }
 }
