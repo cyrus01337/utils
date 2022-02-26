@@ -1,6 +1,6 @@
 {
     "name": "utils",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Handy dandies I can use across all projects",
     "main": "index.mjs",
     "engines": {
@@ -19,7 +19,7 @@
         "url": "https://github.com/cyrus01337/utils/issues"
     },
     "homepage": "https://github.com/cyrus01337/utils#readme",
-    "peerDependencies": {
+    "dependencies": {
         "dedent-js": "^1.0.1"
     }
 }
