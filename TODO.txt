@@ -1,2 +1,0 @@
-Create FindFirstDescendantByPath - acts like recursive FindFirstChild but works based off of path
-Turn path resolver into it's own utility function

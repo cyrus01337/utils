@@ -1,0 +1,29 @@
+{
+    "env": {
+        "es2021": true,
+        "node": true
+    },
+    "extends": "eslint:recommended",
+    "ignorePatterns": ["dist/"],
+    "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+    },
+    "root": true,
+    "rules": {
+        "computed-property-spacing": "warn",
+        "linebreak-style": ["warn", "unix"],
+        "max-depth": ["warn", 3],
+        "no-inner-declarations": "off",
+        "no-unused-private-class-members": "warn",
+        "no-use-before-define": "error",
+        "object-curly-spacing": ["warn", "always"],
+        "operator-linebreak": ["warn", "after"],
+        "quotes": ["error", "double"],
+        "semi": ["warn", "always"],
+        "spaced-comment": "warn",
+        "indent": ["warn", 4, {
+            "VariableDeclarator": "first"
+        }]
+    }
+}
