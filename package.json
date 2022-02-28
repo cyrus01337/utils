@@ -1,6 +1,6 @@
 {
     "name": "utils",
-    "version": "1.0.0a",
+    "version": "1.0.0-beta1",
     "description": "Handy dandies I can use across all projects",
     "type": "module",
     "private": true,
