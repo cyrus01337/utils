@@ -1,10 +1,10 @@
 import glob from "glob";
 
 
-async function getAllRoutes(directoryGlob = "./**/") {
+async function getAllRoutes(cwd) {
     let routes = [];
     // here, we slice the array to skip the first element and avoid recursive imports
-    let directories = glob.sync(directoryGlob, { absolute: true })
+    let directories = glob.sync("./**/", { absolute: true, cwd })
         .slice(1);
 
     for (const directory of directories) {
