@@ -8,7 +8,7 @@ async function getAllRoutes(cwd) {
         .slice(1);
 
     for (const directory of directories) {
-        let { default: imported } = await import(directory);
+        let { default: imported } = await import(`${directory}/index.mjs`);
 
         routes.push(imported);
     }
