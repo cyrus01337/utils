@@ -16,6 +16,25 @@ function addMultipleEventsListener(element, ...args) {
 }
 
 
+function extractAsObject(from, to, attributes) {
+    let toSupplied = true;
+
+    if (to && !attributes) {
+        toSupplied = false;
+        attributes = to;
+        to = {};
+    }
+
+    for (const key of attributes) {
+        to[key] = from[key];
+    }
+
+    if (!toSupplied) {
+        return to;
+    }
+}
+
+
 function format(text, properties) {
     let doActualFormat = (_, matched) => properties[matched] || matched;
 
@@ -56,6 +75,7 @@ function toTitleCase(text) {
 
 export default {
     addMultipleEventsListener,
+    extractAsObject,
     format,
     isObjectEmpty,
     normaliseMultilineString,
