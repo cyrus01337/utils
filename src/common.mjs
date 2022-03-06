@@ -33,6 +33,7 @@ function isObjectEmpty(object) {
 
 
 let normaliseMultilineString = (text) => dedent(text);
+function nullCallback() {}
 function sleep(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds));
 }
@@ -53,15 +54,12 @@ function toTitleCase(text) {
 }
 
 
-function nullCallback() {}
-
-
 export default {
     addMultipleEventsListener,
     format,
     isObjectEmpty,
     normaliseMultilineString,
+    nullCallback,
     sleep,
-    toTitleCase,
-    nullCallback
+    toTitleCase
 };
