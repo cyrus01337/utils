@@ -1,0 +1,10 @@
+{
+    "env": {
+        "browser": true
+    },
+    "overrides": [
+        {
+            "files": ["browser.mjs"]
+        }
+    ]
+}
