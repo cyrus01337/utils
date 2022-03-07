@@ -1,5 +1,7 @@
 import glob from "glob";
 
+import common from "./common.mjs";
+
 
 async function getAllRoutes(cwd) {
     let routes = [];
@@ -17,6 +19,6 @@ async function getAllRoutes(cwd) {
 }
 
 
-export default {
+export default Object.assign(common, {
     getAllRoutes
-};
+});

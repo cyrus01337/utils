@@ -4,8 +4,12 @@
     "description": "Handy dandies I can use across all projects",
     "type": "module",
     "private": true,
-    "main": "index.mjs",
-    "sideEffects": false,
+    "main": "./index.mjs",
+    "exports": {
+        ".": "./src/common.mjs",
+        "./browser": "./src/browser.mjs",
+        "./node": "./src/node.mjs"
+    },
     "engines": {
         "node": "16.x"
     },
@@ -28,10 +32,6 @@
         "glob": "7.2.0"
     },
     "devDependencies": {
-        "clean-webpack-plugin": "^4.0.0",
-        "eslint": "8.10.0",
-        "webpack": "5.69.1",
-        "webpack-cli": "4.9.2",
-        "webpack-merge": "5.8.0"
+        "eslint": "8.10.0"
     }
 }

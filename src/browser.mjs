@@ -1,3 +1,5 @@
+import common from "./common.mjs";
+
 let CSSVars = {};
 
 
@@ -54,9 +56,9 @@ function getCSSVars() {
 let isOutOfBounds = element => !!element.querySelector(":hover");
 
 
-export default {
+export default Object.assign(common, {
     append,
     getCSSVar,
     getCSSVars,
     isOutOfBounds,
-};
+});
