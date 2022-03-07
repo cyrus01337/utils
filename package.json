@@ -1,6 +1,6 @@
 {
     "name": "utils",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Handy dandies I can use across all projects",
     "type": "module",
     "private": true,
@@ -8,7 +8,7 @@
     "exports": {
         ".": "./src/common.mjs",
         "./browser": "./src/browser.mjs",
-        "./node": "./src/node.mjs"
+        "./server": "./src/server.mjs"
     },
     "engines": {
         "node": "16.x"
