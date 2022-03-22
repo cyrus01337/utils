@@ -28,10 +28,10 @@
     },
     "homepage": "https://github.com/cyrus01337/utils",
     "dependencies": {
-        "dedent-js": "1.0.1",
-        "glob": "7.2.0"
+        "dedent-js": "^1.0.1",
+        "glob": "^7.2.0"
     },
     "devDependencies": {
-        "eslint": "8.10.0"
+        "eslint": "^8.10.0"
     }
 }
