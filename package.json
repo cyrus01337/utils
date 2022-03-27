@@ -1,20 +1,20 @@
 {
     "name": "utils",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "Handy dandies I can use across all projects",
     "type": "module",
     "private": true,
-    "main": "./index.mjs",
+    "main": "./dist/common.mjs",
     "exports": {
-        ".": "./src/common.mjs",
-        "./browser": "./src/browser.mjs",
-        "./server": "./src/server.mjs"
+        ".": "./dist/common.mjs",
+        "./*": "./dist/*.mjs"
     },
     "engines": {
         "node": "16.x"
     },
     "scripts": {
-        "build": "webpack --config ./config/esm/webpack.prod.mjs",
+        "build": "webpack",
+        "lint": "eslint ./src/*.mjs",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
@@ -32,6 +32,9 @@
         "glob": "^7.2.0"
     },
     "devDependencies": {
-        "eslint": "^8.10.0"
+        "eslint": "^8.10.0",
+        "webpack": "^5.70.0",
+        "webpack-cli": "^4.9.2",
+        "webpack-rules": "file:webpack-rules"
     }
 }

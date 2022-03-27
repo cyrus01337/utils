@@ -1,4 +1,3 @@
-[submodule "config"]
-	path = config
-	url = https://github.com/cyrus01337/dotfiles.git
-	branch = javascript
+[submodule "webpack-rules"]
+	path = webpack-rules
+	url = https://github.com/cyrus01337/webpack-rules
