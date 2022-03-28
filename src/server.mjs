@@ -1,6 +1,6 @@
 import glob from "glob";
 
-import common from "./common.mjs";
+import common from "./common";
 
 
 async function getAllRoutes(cwd) {
