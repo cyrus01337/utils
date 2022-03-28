@@ -1,16 +1,8 @@
 import rules from "webpack-rules";
 
 export default {
-    entry: {
-        browser: "./src/browser.mjs",
-        common: "./src/common.mjs",
-        server: "./src/server.mjs"
-    },
-    experiments: {
-        outputModule: true,
-        topLevelAwait: true
-    },
-    externals: ["glob"],
+    devtool: "source-map",
+    entry: "./src/browser.mjs",
     mode: "production",
     module: {
         rules: [
@@ -19,13 +11,9 @@ export default {
     },
     output: {
         clean: true,
-        library: {
-            type: "module"
-        },
-        module: true
+        filename: "browser.mjs"
     },
     resolve: {
-        enforceExtension: false,
         extensions: [".mjs"],
         preferRelative: true
     }

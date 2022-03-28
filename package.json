@@ -4,10 +4,11 @@
     "description": "Handy dandies I can use across all projects",
     "type": "module",
     "private": true,
-    "main": "./dist/common.mjs",
+    "main": "./src/common.mjs",
     "exports": {
-        ".": "./dist/common.mjs",
-        "./*": "./dist/*.mjs"
+        ".": "./src/common.mjs",
+        "./browser": "./dist/browser.mjs",
+        "./server": "./src/server.mjs"
     },
     "engines": {
         "node": "16.x"
