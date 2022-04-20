@@ -16,6 +16,17 @@ export function addMultipleEventsListener(element, ...args) {
 }
 
 
+export function constructURLWithSearchParams(url, params) {
+    let search = "";
+
+    for (const [key, value] of Object.entries(params)) {
+        search += `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    }
+
+    return url + search;
+}
+
+
 let _createTiming = (_type, amount) => ({
     type: _type,
     amount
@@ -24,7 +35,7 @@ let _createTiming = (_type, amount) => ({
 
 export let createInterval = delay => _createTiming("interval", delay);
 export let createTimestamp = timestamp => _createTiming("timestamp", timestamp);
-export function createCycle(callback, timing = _createInterval(1000)) {
+export function createCycle(callback, timing = _createTiming(1000)) {
     let id;
     let isTimestamp = timing.type === "timestamp";
     let delay = !isTimestamp && timing.amount > 0 ?
@@ -149,6 +160,7 @@ export function toTitleCase(text) {
 
 export default {
     addMultipleEventsListener,
+    constructURLWithSearchParams,
     createCycle,
     createInterval,
     createTimestamp,
