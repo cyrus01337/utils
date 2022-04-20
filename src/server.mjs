@@ -5,7 +5,7 @@ import glob from "glob";
 import common from "./common.mjs";
 
 
-function generateWebpackEntryPoints() {
+export function generateWebpackEntryPoints() {
     let entries = {};
     let directories = glob.sync("./src/routes/**/entry.mjs");
     let names = directories.map(route => route.toLowerCase())
@@ -26,7 +26,7 @@ function generateWebpackEntryPoints() {
 }
 
 
-async function getAllRoutes(cwd) {
+export async function getAllRoutes(cwd) {
     let routes = [];
     // here, we slice the array to skip the first element and avoid recursive imports
     let directories = glob.sync("./**/", { absolute: true, cwd })

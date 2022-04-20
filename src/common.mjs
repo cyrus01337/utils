@@ -3,7 +3,7 @@ import dedent from "dedent-js";
 const WORD = /[a-z][a-z0-9]*(?:\b)*/gi;
 
 
-function addMultipleEventsListener(element, ...args) {
+export function addMultipleEventsListener(element, ...args) {
     let listener = args[args.length - 1];
 
     if (typeof listener !== "function") {
@@ -16,7 +16,46 @@ function addMultipleEventsListener(element, ...args) {
 }
 
 
-function extractAsObject(from, to, attributes) {
+let _createTiming = (_type, amount) => ({
+    type: _type,
+    amount
+});
+
+
+export let createInterval = delay => _createTiming("interval", delay);
+export let createTimestamp = timestamp => _createTiming("timestamp", timestamp);
+export function createCycle(callback, timing = _createInterval(1000)) {
+    let id;
+    let isTimestamp = timing.type === "timestamp";
+    let delay = !isTimestamp && timing.amount > 0 ?
+        timing.amount :
+        1000;
+
+    if (isTimestamp) {
+        function timestampCycleHandler() {
+            let now = Date.now() / 1000;
+            let amount = timing.amount;
+            let destination = amount instanceof Date ?
+                amount.getTime() :
+                amount;
+            let secondsUntilDestination = destination - now;
+
+            if (secondsUntilDestination <= 0) {
+                callback();
+                clearInterval(id);
+            }
+        }
+
+        callback = timestampCycleWrapper;
+    }
+
+    id = setInterval(callback, delay);
+
+    return id;
+}
+
+
+export function extractAsObject(from, to, attributes) {
     let toSupplied = true;
 
     if (to && !attributes) {
@@ -35,14 +74,14 @@ function extractAsObject(from, to, attributes) {
 }
 
 
-function format(text, properties) {
+export function format(text, properties) {
     let doActualFormat = (_, matched) => properties[matched] || matched;
 
     return text.replaceAll(/{([a-z0-9_]+)}/ig, doActualFormat);
 }
 
 
-function isObjectEmpty(object) {
+export function isObjectEmpty(object) {
     if (!(object && Object.getPrototypeOf(object) === Object.prototype)) return;
 
     let keys = Object.keys(object);
@@ -51,14 +90,49 @@ function isObjectEmpty(object) {
 }
 
 
-let normaliseMultilineString = (text) => dedent(text);
-function nullCallback() {}
-function sleep(seconds) {
+export let normaliseMultilineString = (text) => dedent(text);
+export function nullCallback() {}
+export function random(obj) {
+    if (!isNaN(obj)) {
+        return Math.floor(Math.random() * obj);
+    } else if (typeof obj === "string") {
+        let head = random(obj.length - 1);
+
+        return obj.substring(head, head + 1);
+    } else if (obj instanceof Array) {
+        let index = random(obj.length);
+
+        return obj[index];
+    } else if (obj instanceof Object) {
+        let keys = Object.keys(obj);
+        let index = random(keys.length);
+        let key = keys[index];
+
+        return obj[key];
+    }
+}
+
+
+export function sleep(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds));
 }
 
 
-function toTitleCase(text) {
+// I love you Danny :)
+//
+// https://github.com/Rapptz/discord.py/blob/06c257760bdedd39c37a7eb12f0338ac60b48c20/discord/utils.py#L658-L676
+export async function sleepUntil(timestamp) {
+    let now = Date.now() / 1000;
+    let destination = timestamp instanceof Date ?
+        timestamp.getTime() :
+        timestamp;
+    let secondsUntilDone = destination - now;
+
+    await sleep(secondsUntilDone);
+}
+
+
+export function toTitleCase(text) {
     let toJoin = [];
 
     for (const word of text.match(WORD)) {
@@ -75,11 +149,16 @@ function toTitleCase(text) {
 
 export default {
     addMultipleEventsListener,
+    createCycle,
+    createInterval,
+    createTimestamp,
     extractAsObject,
     format,
     isObjectEmpty,
     normaliseMultilineString,
     nullCallback,
+    random,
     sleep,
-    toTitleCase
+    sleepUntil,
+    toTitleCase,
 };

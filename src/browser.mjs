@@ -3,14 +3,14 @@ import common from "./common.mjs";
 let CSSVars = {};
 
 
-function append(parent, ...elements) {
+export function append(parent, ...elements) {
     for (const element of elements) {
         parent.appendChild(element);
     }
 }
 
 
-function doCSSVarConversion(value) {
+function _doCSSVarConversion(value) {
     let asNumber = parseFloat(value);
 
     if (!isNaN(asNumber)) {
@@ -19,21 +19,21 @@ function doCSSVarConversion(value) {
 }
 
 
-function getCSSVar(property) {
+export function getCSSVar(property) {
     let cached = CSSVars[property];
 
     if (cached) return cached;
 
     let computedStyle = window.getComputedStyle(document.documentElement);
     let value = computedStyle.getPropertyValue(property);
-    let converted = doCSSVarConversion(value);
+    let converted = _doCSSVarConversion(value);
     CSSVars[property] = converted;
 
     return converted;
 }
 
 
-function getCSSVars() {
+export function getCSSVars() {
     let computedStyle = window.getComputedStyle(
         document.documentElement
     );
@@ -45,7 +45,7 @@ function getCSSVars() {
             let value = computedStyle.getPropertyValue(
                 property
             );
-            CSSVars[property] = doCSSVarConversion(value);
+            CSSVars[property] = _doCSSVarConversion(value);
         }
     }
 
@@ -53,9 +53,7 @@ function getCSSVars() {
 }
 
 
-let isOutOfBounds = element => !!element.querySelector(":hover");
-
-
+export let isOutOfBounds = element => !!element.querySelector(":hover");
 export default Object.assign(common, {
     append,
     getCSSVar,
