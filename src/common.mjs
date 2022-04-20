@@ -46,7 +46,7 @@ export function createCycle(callback, timing = _createInterval(1000)) {
             }
         }
 
-        callback = timestampCycleWrapper;
+        callback = timestampCycleHandler;
     }
 
     id = setInterval(callback, delay);
