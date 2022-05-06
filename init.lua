@@ -1,30 +1,20 @@
+--!strict
 --!nolint UninitializedLocal
-local TS = game:GetService("TweenService")
-local Players = game:GetService("Players")
-local Run = game:GetService("RunService")
+local TweenService: TweenService = game:GetService("TweenService")
+local Players: Players = game:GetService("Players")
+local RunService: RunService = game:GetService("RunService")
 
 local Table = require(script.Table)
 local UtilsMeta = {}
 local Utils = {}
 
 
-function UtilsMeta:__index(key)
+function UtilsMeta:__index(key: any): any
     return rawget(Utils, key) or Table[key]
 end
 
 
-function Utils.map(iterable, callback)
-    local ret = {}
-
-    for k, v in pairs(iterable) do
-        ret[k] = callback(v, k, iterable)
-    end
-
-    return ret
-end
-
-
-function Utils.to(text, amount)
+function Utils.to(text: string, amount: number): string
     -- formatting the string prior to concatenation propagates a syntax error
     local pattern = "%." .. tostring(amount) .. "s"
 
@@ -32,7 +22,7 @@ function Utils.to(text, amount)
 end
 
 
-function Utils.capitalise(text)
+function Utils.capitalise(text: string): string
     local head = string.upper(text:sub(1, 1))
     local tail = text:sub(2)
 
@@ -45,7 +35,7 @@ end
 Utils.capitalize = Utils.capitalise
 
 
-function Utils.timeit(callback, iterations)
+function Utils.timeit(callback: () -> any, iterations: number): nil
     iterations = if iterations ~= nil then iterations else 10000
 
     assert(iterations > 0, "Cannot make iterations <= 0")
@@ -84,14 +74,14 @@ function Utils.timeit(callback, iterations)
 end
 
 
-function Utils.strip(text)
+function Utils.strip(text: string): string
     text = tostring(text)
 
     return text:match(Utils.Constants.STRIP_PATTERN) or text
 end
 
 
-function Utils.parent(object, iterations)
+function Utils.parent(object: Instance, iterations: number): Instance?
     -- suppresses and special-cases nil.Parent errors by returning nil
     local success, ret = pcall(function()
         for _ = 1, iterations do
@@ -107,7 +97,7 @@ function Utils.parent(object, iterations)
 end
 
 
-function Utils.isIn(value, iterable)
+function Utils.isIn(value: any, iterable: table): boolean
     for _, element in pairs(iterable) do
         if element == value then
             return true
@@ -118,7 +108,7 @@ function Utils.isIn(value, iterable)
 end
 
 
-function Utils.isOneOf(object, ...)
+function Utils.isOneOf(object: Instance, ...: string): boolean
     for _, className in ipairs({...}) do
         if object:IsA(className) then
             return true
@@ -129,7 +119,7 @@ function Utils.isOneOf(object, ...)
 end
 
 
-function Utils.abbreviate(number, decimalPlaces, limit)
+function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number?): string
     decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
     limit = if limit ~= nil then limit else 999
 
@@ -158,7 +148,7 @@ end
 
 
 -- https://devforum.roblox.com/t/waitforchild-recursive/17087/13
-function Utils.waitForDescendant(parent, path)
+function Utils.waitForDescendant(parent: Instance, path: string): Instance?
     local descendant;
 
     for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
@@ -181,7 +171,7 @@ function Utils.waitForDescendant(parent, path)
 end
 
 
-function Utils.debounce(callback, returning)
+function Utils.debounce<P, T>(callback: (...P) -> T, returning: any?): (...P) -> T
     local debounce = false
 
     return function(...)
@@ -196,7 +186,7 @@ function Utils.debounce(callback, returning)
 end
 
 
-function Utils.debounceTable(callback, returning)
+function Utils.debounceTable<P, T, R>(callback: (P, ...T) -> R, returning: any?): (P, ...T) -> R
     local debounces = {}
 
     return function(player, ...)
@@ -211,13 +201,13 @@ function Utils.debounceTable(callback, returning)
 end
 
 
-function Utils.findPlayerFromAncestor(part, recursive)
+function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): Player?
     recursive = if recursive ~= nil then recursive else false
 
     local modelFound;
 
     while not modelFound do
-        modelFound = part:FindFirstAncestorOfClass("Model")
+        modelFound = instance:FindFirstAncestorOfClass("Model")
 
         if not modelFound then break end
 
@@ -227,16 +217,16 @@ function Utils.findPlayerFromAncestor(part, recursive)
             return playerFound
         end
 
-        part = modelFound
+        instance = modelFound
     end
 
     return nil
 end
 
 
-function Utils.playTweenAwait(tween, tweenInfo, properties)
+function Utils.playTweenAwait(tween: Tween, tweenInfo: TweenInfo, properties: { [string]: any }): nil
     if not tween:IsA("Tween") then
-        tween = TS:Create(tween, tweenInfo, properties)
+        tween = TweenService:Create(tween, tweenInfo, properties)
     end
 
     tween:Play()
@@ -249,8 +239,8 @@ function Utils.playTweenAwait(tween, tweenInfo, properties)
 end
 
 
-function Utils.create(instanceData)
-    local lastKey;
+function Utils.create(instanceData: { [string]: any }): Instance | {Instance} | nil
+    local lastKey: string;
     local count = 0
     local instances = {}
     local parents = {}
@@ -310,7 +300,7 @@ function Utils.create(instanceData)
 end
 
 
-function Utils.resolvePath(path)
+function Utils.resolvePath(path: string): Instance?
     if path == nil then return end
 
     local count = 0
@@ -334,7 +324,7 @@ function Utils.resolvePath(path)
 end
 
 
-function Utils.round(number, places)
+function Utils.round<N>(number: N, places: number): N
     places = if places then places else 0
 
     local power = 10 ^ places
@@ -343,7 +333,7 @@ function Utils.round(number, places)
 end
 
 
-function Utils.requireAll(...)
+function Utils.requireAll(...: Instance): ...table
     local modules = {}
 
     for _, path in ipairs({...}) do
@@ -356,8 +346,8 @@ function Utils.requireAll(...)
 end
 
 
-function Utils.runInStudio(callback)
-    if Run:IsStudio() then return end
+function Utils.runInStudio(callback: () -> any): nil
+    if RunService:IsStudio() then return end
 
     callback()
 end

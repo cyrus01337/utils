@@ -1,7 +1,18 @@
 local Table = {}
 
 
-function Table.pop(iterable, key, fallback)
+function Table.map<T>(iterable: {T}, callback: (any, any, table) -> any): {T}
+    local ret = {}
+
+    for k, v in pairs(iterable) do
+        ret[k] = callback(v, k, iterable)
+    end
+
+    return ret
+end
+
+
+function Table.pop<T>(iterable: table, key: any, fallback: T?): T | any?
     if typeof(key) == "number" then
         return table.remove(iterable, key)
     end
@@ -18,7 +29,7 @@ function Table.pop(iterable, key, fallback)
 end
 
 
-function Table.length(iterable)
+function Table.length(iterable: table): number
     local count = 0
 
     for _, _ in pairs(iterable) do
@@ -29,7 +40,7 @@ function Table.length(iterable)
 end
 
 
-function Table.choice(iterable, isArray)
+function Table.choice(iterable: table, isArray: boolean?): any
     isArray = if isArray ~= nil then isArray else false
 
     if isArray then
@@ -46,7 +57,7 @@ function Table.choice(iterable, isArray)
 end
 
 
-function Table.copy(container)
+function Table.copy<T>(container: {T}): {T}
     local copy = {}
 
     for key, value in pairs(container) do
@@ -61,7 +72,7 @@ function Table.copy(container)
 end
 
 
-function Table.deepcopy(container)
+function Table.deepcopy<T>(container: {T}): {T}
     local copy = {}
 
     for key, value in pairs(container) do
@@ -82,7 +93,7 @@ end
 
 -- table.create but it actually works and adds n unique values instead of n
 -- references all pointing to the same memory address
-function Table.produce(count, value)
+function Table.produce<T>(count: number, value: T): { [number]: T }
     local toUnpack = {}
 
     for _ = 1, count do
@@ -99,25 +110,25 @@ function Table.produce(count, value)
 end
 
 
-function Table.enumerate(container, start)
-    start = if start ~= nil then start else 0
+function Table.enumerate(container: table, index: number?): () -> (number, any, any)
+    index = if index ~= nil then index else 0
 
     local key, value;
 
-    return function()
-        start += 1
+    return function(): (number, any, any) -> any
+        index += 1
         key, value = next(container, key)
 
         if value == nil then
             return value
         end
 
-        return start, key, value
+        return index, key, value
     end
 end
 
 
-function Table.zip(...)
+function Table.zip<T>(...: T): () -> ...any
     local containers = {...}
     local nilCount = 0
     local containersLength = #containers
@@ -158,7 +169,7 @@ function Table.zip(...)
 end
 
 
-function Table.keys(container)
+function Table.keys<T>(container: { [T]: any }): () -> T
     local key, _;
 
     return function()
@@ -169,7 +180,7 @@ function Table.keys(container)
 end
 
 
-function Table.values(container)
+function Table.values<T>(container: { [any]: T }): () -> T
     local key, value;
 
     return function()
