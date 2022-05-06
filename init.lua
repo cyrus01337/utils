@@ -87,7 +87,7 @@ end
 function Utils.strip(text)
     text = tostring(text)
 
-    return text:match(Utils.Constants.STRIP_REGEX) or text
+    return text:match(Utils.Constants.STRIP_PATTERN) or text
 end
 
 
