@@ -92,7 +92,7 @@ end
 
 
 function Utils.parent(object, iterations)
-    -- suppresses and special-case nil.Parent errors by returning nil
+    -- suppresses and special-cases nil.Parent errors by returning nil
     local success, ret = pcall(function()
         for _ = 1, iterations do
             object = object["Parent"]
