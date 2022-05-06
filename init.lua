@@ -17,7 +17,7 @@ function Utils.map(iterable, callback)
     local ret = {}
 
     for k, v in pairs(iterable) do
-        ret[k] = callback(v)
+        ret[k] = callback(v, k, iterable)
     end
 
     return ret
