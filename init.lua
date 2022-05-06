@@ -32,11 +32,6 @@ function Utils.to(text, amount)
 end
 
 
-function Utils.tobool(value)
-    return not not value
-end
-
-
 function Utils.capitalise(text)
     local head = string.upper(text:sub(1, 1))
     local tail = text:sub(2)
