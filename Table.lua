@@ -99,4 +99,85 @@ function Table.produce(count, value)
 end
 
 
+function Table.enumerate(container, start)
+    start = if start ~= nil then start else 0
+
+    local key, value;
+
+    return function()
+        start += 1
+        key, value = next(container, key)
+
+        if value == nil then
+            return value
+        end
+
+        return start, key, value
+    end
+end
+
+
+function Table.zip(...)
+    local containers = {...}
+    local nilCount = 0
+    local containersLength = #containers
+    local keys = {}
+
+    return function()
+        local values = {}
+
+        for i = 1, containersLength do
+            local key, value;
+            local container = containers[i]
+            local previous = keys[i]
+
+            if typeof(container) == "table" then
+                key, value = next(container, previous)
+            else
+                key, value = container()
+
+                if value == nil then
+                    value = key
+                    key = nil
+                end
+            end
+
+            if value == nil then
+                nilCount += 1
+            else
+                keys[i] = key
+
+                table.insert(values, value)
+            end
+        end
+
+        if nilCount == containersLength then return end
+
+        return table.unpack(values)
+    end
+end
+
+
+function Table.keys(container)
+    local key, _;
+
+    return function()
+        key, _ = next(container, key)
+
+        return key
+    end
+end
+
+
+function Table.values(container)
+    local key, value;
+
+    return function()
+        key, value = next(container, key)
+
+        return value
+    end
+end
+
+
 return Table
