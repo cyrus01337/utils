@@ -161,8 +161,19 @@ function Table.zip<V>(...: Types.Array<Types.Mapping<any, V>>): () -> ...V
 end
 
 
-function Table.keys<K>(container: Types.Mapping<K, any>): () -> K
+function Table.keys<K>(container: Types.Mapping<K, any>, asArray: boolean?): () -> K
+    asArray = asArray or false
     local key, _;
+
+    if asArray then
+        local keys = {}
+
+        for key in Table.keys(container) do
+            table.insert(keys, key)
+        end
+
+        return keys
+    end
 
     return function()
         key, _ = next(container, key)
@@ -172,8 +183,19 @@ function Table.keys<K>(container: Types.Mapping<K, any>): () -> K
 end
 
 
-function Table.values<V>(container: Types.Mapping<any, V>): () -> V
+function Table.values<V>(container: Types.Mapping<any, V>, asArray: boolean?): () -> V
+    asArray = asArray or false
     local key, value;
+
+    if asArray then
+        local values = {}
+
+        for value in Table.values(container) do
+            table.insert(values, value)
+        end
+
+        return values
+    end
 
     return function()
         key, value = next(container, key)
