@@ -183,4 +183,15 @@ function Table.values<V>(container: Types.Mapping<any, V>): () -> V
 end
 
 
+function Table.extract<K>(container: Types.Mapping<K, any>, ...: K): ...K
+    local extracted = {}
+
+    for _, key in ipairs({...}) do
+        table.insert(extracted, key)
+    end
+
+    return table.unpack(extracted)
+end
+
+
 return Table
