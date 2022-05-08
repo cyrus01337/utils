@@ -1,16 +1,27 @@
 --!strict
 --!nolint UninitializedLocal
-local TweenService: TweenService = game:GetService("TweenService")
-local Players: Players = game:GetService("Players")
-local RunService: RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local Table = require(script.Table)
 local UtilsMeta = {}
 local Utils = {}
 
 
-function UtilsMeta:__index(key: any): any
+function UtilsMeta:__index(key: any): any?
     return rawget(Utils, key) or Table[key]
+end
+
+
+function Utils.map<K, V>(iterable: { [K]: any }, callback: () -> V): { [K]: V }
+    local ret = {}
+
+    for k, v in pairs(iterable) do
+        ret[k] = callback(v, k, iterable)
+    end
+
+    return ret
 end
 
 
@@ -97,7 +108,7 @@ function Utils.parent(object: Instance, iterations: number): Instance?
 end
 
 
-function Utils.isIn(value: any, iterable: table): boolean
+function Utils.isIn(value: any, iterable: table): any?
     for _, element in pairs(iterable) do
         if element == value then
             return true
@@ -148,7 +159,7 @@ end
 
 
 -- https://devforum.roblox.com/t/waitforchild-recursive/17087/13
-function Utils.waitForDescendant(parent: Instance, path: string): Instance?
+function Utils.waitForDescendant(parent: Instance, path: string): Instance
     local descendant;
 
     for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
@@ -171,7 +182,7 @@ function Utils.waitForDescendant(parent: Instance, path: string): Instance?
 end
 
 
-function Utils.debounce<P, T>(callback: (...P) -> T, returning: any?): (...P) -> T
+function Utils.debounce<T>(callback: () -> any, returning: T?): T | any?
     local debounce = false
 
     return function(...)
@@ -186,7 +197,7 @@ function Utils.debounce<P, T>(callback: (...P) -> T, returning: any?): (...P) ->
 end
 
 
-function Utils.debounceTable<P, T, R>(callback: (P, ...T) -> R, returning: any?): (P, ...T) -> R
+function Utils.debounceTable<T>(callback: () -> any, returning: T?): T | any?
     local debounces = {}
 
     return function(player, ...)
@@ -224,7 +235,7 @@ function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): 
 end
 
 
-function Utils.playTweenAwait(tween: Tween, tweenInfo: TweenInfo, properties: { [string]: any }): nil
+function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, properties: { [string]: string }): nil
     if not tween:IsA("Tween") then
         tween = TweenService:Create(tween, tweenInfo, properties)
     end
@@ -239,7 +250,10 @@ function Utils.playTweenAwait(tween: Tween, tweenInfo: TweenInfo, properties: { 
 end
 
 
-function Utils.create(instanceData: { [string]: any }): Instance | {Instance} | nil
+type InstanceProperties = { [string]: any }
+
+
+function Utils.create(instanceData: { [string]: any }): Instance | {Instance}?
     local lastKey: string;
     local count = 0
     local instances = {}
@@ -324,7 +338,7 @@ function Utils.resolvePath(path: string): Instance?
 end
 
 
-function Utils.round<N>(number: N, places: number): N
+function Utils.round(number: number, places: number): number
     places = if places then places else 0
 
     local power = 10 ^ places
@@ -333,7 +347,7 @@ function Utils.round<N>(number: N, places: number): N
 end
 
 
-function Utils.requireAll(...: Instance): ...table
+function Utils.requireAll(...: BaseScript): ...table
     local modules = {}
 
     for _, path in ipairs({...}) do

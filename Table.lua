@@ -1,18 +1,7 @@
 local Table = {}
 
 
-function Table.map<T>(iterable: {T}, callback: (any, any, table) -> any): {T}
-    local ret = {}
-
-    for k, v in pairs(iterable) do
-        ret[k] = callback(v, k, iterable)
-    end
-
-    return ret
-end
-
-
-function Table.pop<T>(iterable: table, key: any, fallback: T?): T | any?
+function Table.pop<T>(iterable: table, key: number | string, fallback: T?): T | any
     if typeof(key) == "number" then
         return table.remove(iterable, key)
     end
@@ -110,12 +99,12 @@ function Table.produce<T>(count: number, value: T): { [number]: T }
 end
 
 
-function Table.enumerate(container: table, index: number?): () -> (number, any, any)
+function Table.enumerate<K, V>(container: { [K]: V }, index: number?): () -> (number, K, V)
     index = if index ~= nil then index else 0
 
     local key, value;
 
-    return function(): (number, any, any) -> any
+    return function(): (number, any, any)
         index += 1
         key, value = next(container, key)
 
@@ -128,7 +117,7 @@ function Table.enumerate(container: table, index: number?): () -> (number, any, 
 end
 
 
-function Table.zip<T>(...: T): () -> ...any
+function Table.zip<V>(...: {{ [any]: V }}): () -> ...V
     local containers = {...}
     local nilCount = 0
     local containersLength = #containers
@@ -169,7 +158,7 @@ function Table.zip<T>(...: T): () -> ...any
 end
 
 
-function Table.keys<T>(container: { [T]: any }): () -> T
+function Table.keys<K>(container: { [K]: any }): () -> K
     local key, _;
 
     return function()
@@ -180,7 +169,7 @@ function Table.keys<T>(container: { [T]: any }): () -> T
 end
 
 
-function Table.values<T>(container: { [any]: T }): () -> T
+function Table.values<V>(container: { [any]: V }): () -> V
     local key, value;
 
     return function()
