@@ -1,10 +1,12 @@
 --!strict
 --!nolint UninitializedLocal
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local Table = require(script.Table)
+local Types = require(script.Types)
+
 local UtilsMeta = {}
 local Utils = {}
 
@@ -14,7 +16,7 @@ function UtilsMeta:__index(key: any): any?
 end
 
 
-function Utils.map<K, V>(iterable: { [K]: any }, callback: () -> V): { [K]: V }
+function Utils.map<K, V>(iterable: Types.Mapping<K, any>, callback: () -> V): Types.Mapping<K, V>
     local ret = {}
 
     for k, v in pairs(iterable) do
@@ -119,9 +121,9 @@ function Utils.isIn(value: any, iterable: table): any?
 end
 
 
-function Utils.isOneOf(object: Instance, ...: string): boolean
+function Utils.isOneOf(instance: Instance, ...: string): boolean
     for _, className in ipairs({...}) do
-        if object:IsA(className) then
+        if instance:IsA(className) then
             return true
         end
     end
@@ -235,7 +237,9 @@ function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): 
 end
 
 
-function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, properties: { [string]: string }): nil
+function Utils.playTweenAwait(tween: Tween | Instance,
+                              tweenInfo: TweenInfo,
+                              properties: Types.Mapping<string, string>): nil
     if not tween:IsA("Tween") then
         tween = TweenService:Create(tween, tweenInfo, properties)
     end
@@ -250,10 +254,7 @@ function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, pro
 end
 
 
-type InstanceProperties = { [string]: any }
-
-
-function Utils.create(instanceData: { [string]: any }): Instance | {Instance}?
+function Utils.create(instanceData: Types.Mapping<string, any>): Instance | Types.Array<Instance>?
     local lastKey: string;
     local count = 0
     local instances = {}

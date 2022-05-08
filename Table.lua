@@ -1,3 +1,6 @@
+--!strict
+local Types = require(script.Types)
+
 local Table = {}
 
 
@@ -46,7 +49,7 @@ function Table.choice(iterable: table, isArray: boolean?): any
 end
 
 
-function Table.copy<T>(container: {T}): {T}
+function Table.copy<T>(container: Types.Array<T>): Types.Array<T>
     local copy = {}
 
     for key, value in pairs(container) do
@@ -61,7 +64,7 @@ function Table.copy<T>(container: {T}): {T}
 end
 
 
-function Table.deepcopy<T>(container: {T}): {T}
+function Table.deepcopy<T>(container: Types.Array<T>): Types.Array<T>
     local copy = {}
 
     for key, value in pairs(container) do
@@ -82,7 +85,7 @@ end
 
 -- table.create but it actually works and adds n unique values instead of n
 -- references all pointing to the same memory address
-function Table.produce<T>(count: number, value: T): { [number]: T }
+function Table.produce<T>(count: number, value: T): Types.Mapping<number, T>
     local toUnpack = {}
 
     for _ = 1, count do
@@ -99,7 +102,7 @@ function Table.produce<T>(count: number, value: T): { [number]: T }
 end
 
 
-function Table.enumerate<K, V>(container: { [K]: V }, index: number?): () -> (number, K, V)
+function Table.enumerate<K, V>(container: Types.Mapping<K, V>, index: number?): () -> (number, K, V)
     index = if index ~= nil then index else 0
 
     local key, value;
@@ -117,7 +120,7 @@ function Table.enumerate<K, V>(container: { [K]: V }, index: number?): () -> (nu
 end
 
 
-function Table.zip<V>(...: {{ [any]: V }}): () -> ...V
+function Table.zip<V>(...: Types.Array<Types.Mapping<any, V>>): () -> ...V
     local containers = {...}
     local nilCount = 0
     local containersLength = #containers
@@ -158,7 +161,7 @@ function Table.zip<V>(...: {{ [any]: V }}): () -> ...V
 end
 
 
-function Table.keys<K>(container: { [K]: any }): () -> K
+function Table.keys<K>(container: Types.Mapping<K, any>): () -> K
     local key, _;
 
     return function()
@@ -169,7 +172,7 @@ function Table.keys<K>(container: { [K]: any }): () -> K
 end
 
 
-function Table.values<V>(container: { [any]: V }): () -> V
+function Table.values<V>(container: Types.Mapping<any, V>): () -> V
     local key, value;
 
     return function()
