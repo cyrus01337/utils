@@ -26,16 +26,29 @@ export function generateWebpackEntryPoints() {
 }
 
 
-export async function getAllRoutes(cwd) {
+export async function getAllRoutes(cwd, log) {
     let routes = [];
     // here, we slice the array to skip the first element and avoid recursive imports
     let directories = glob.sync("./**/", { absolute: true, cwd })
         .slice(1);
 
     for (const directory of directories) {
-        let { default: imported } = await import(`${directory}/index.mjs`);
+        try {
+            let { default: imported } = await import(`${directory}/index.mjs`);
 
-        routes.push(imported);
+            routes.push(imported);
+        } catch (error) {
+            if (!log) continue;
+
+            let name = path.dirname(directory);
+            let normalised = common.normaliseMultilineString(`
+                Skipping ${name} due to error:
+
+                ${error.stack}
+            `);
+
+            console.error(normalised);
+        }
     }
 
     return routes;
