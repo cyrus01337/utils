@@ -101,6 +101,7 @@ export function isObjectEmpty(object) {
 }
 
 
+export let kmap = (iterable, callback) => iterable.map((_, key) => callback(key));
 export let normaliseMultilineString = (text) => dedent(text);
 export function nullCallback() {}
 export function random(obj) {
@@ -158,6 +159,7 @@ export function toTitleCase(text) {
 }
 
 
+export let vmap = (iterable, callback) => iterable.map(value => callback(value));
 export default {
     addMultipleEventsListener,
     constructURLWithSearchParams,
@@ -167,10 +169,12 @@ export default {
     extractAsObject,
     format,
     isObjectEmpty,
+    kmap,
     normaliseMultilineString,
     nullCallback,
     random,
     sleep,
     sleepUntil,
     toTitleCase,
+    vmap
 };
