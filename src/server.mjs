@@ -40,14 +40,11 @@ export async function getAllRoutes(cwd, log) {
         } catch (error) {
             if (!log) continue;
 
-            let name = path.dirname(directory);
-            let normalised = common.normaliseMultilineString(`
-                Skipping ${name} due to error:
+            console.error(`
+                Skipping ${directory} due to error:
 
                 ${error.stack}
             `);
-
-            console.error(normalised);
         }
     }
 
