@@ -167,7 +167,6 @@ export default {
     format,
     isObjectEmpty,
     kmap,
-    normaliseMultilineString,
     nullCallback,
     random,
     sleep,
