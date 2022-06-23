@@ -28,7 +28,7 @@ function UtilsMeta:__index(key: any): any
 end
 
 
-function Utils.map<T>(container: Types.Table, callback: Types.Function<(any, any, Types.Table), (T)>): Types.Array<T>
+function Utils.map<T>(container: Types.Table, callback: Types.Function<(any, any, Types.Table), T>): Types.Array<T>
     local ret = {}
 
     for k, v in pairs(container) do
@@ -57,7 +57,7 @@ end
 Utils.capitalize = Utils.capitalise
 
 
-function Utils.timeit(callback: Types.Function<(any), (any)>, iterations: number?)
+function Utils.timeit(callback: Types.Function<(), any>, iterations: number?)
     iterations = iterations or 10000
     local min, max, message;
     local sum = 0
@@ -188,7 +188,7 @@ function Utils.waitForDescendant(parent: Instance, path: string): Instance
 end
 
 
-function Utils.debounce<P, R, T>(callback: Types.Function<(P), (R)>, returning: T): Types.Function<(P), (R | T)>
+function Utils.debounce<P, R, T>(callback: Types.Function<(P), R>, returning: T): Types.Function<(P), R | T>
     local debounce = false
 
     return function(...)
@@ -203,8 +203,8 @@ function Utils.debounce<P, R, T>(callback: Types.Function<(P), (R)>, returning: 
 end
 
 
-function Utils.debounceTable<P, R, T>(callback: Types.Function<(Player, P), (R)>,
-                                      returning: T): Types.Function<(Player, P), (R | T)>
+function Utils.debounceTable<P, R, T>(callback: Types.Function<(Player, P), R>,
+                                      returning: T): Types.Function<(Player, P), R | T>
     local debounces = {}
 
     return function(player, ...)
@@ -258,7 +258,7 @@ function Utils.playTweenAwait(target: Tween | Instance, tweenInfo: TweenInfo, pr
 end
 
 
-function Utils.enumerate(container: Types.Table, start: number?): Types.Function<nil, (number, any, any)>
+function Utils.enumerate(container: Types.Table, start: number?): Types.Function<(), number, any, any>
     local key, value;
     local start: number = start or 0
 
@@ -275,7 +275,7 @@ function Utils.enumerate(container: Types.Table, start: number?): Types.Function
 end
 
 
-function Utils.zip<T>(...: Types.Table | Types.Function<(), (T)>): Types.Function<(), (T?)>
+function Utils.zip<T>(...: Types.Table | Types.Function<(), T>): Types.Function<(), T?>
     local containers = {...}
     local nilCount = 0
     local containersLength = #containers
@@ -316,7 +316,7 @@ function Utils.zip<T>(...: Types.Table | Types.Function<(), (T)>): Types.Functio
 end
 
 
-function Utils.keys<K>(dictionary: Types.Mapping<K, any>): Types.Function<(), (K)>
+function Utils.keys<K>(dictionary: Types.Mapping<K, any>): Types.Function<(), K>
     local key, _;
 
     return function()
@@ -327,7 +327,7 @@ function Utils.keys<K>(dictionary: Types.Mapping<K, any>): Types.Function<(), (K
 end
 
 
-function Utils.values<V>(dictionary: Types.Mapping<any, V>): Types.Function<(), (V)>
+function Utils.values<V>(dictionary: Types.Mapping<any, V>): Types.Function<(), V>
     local key, value;
 
     return function()
