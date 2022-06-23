@@ -97,4 +97,95 @@ function Table.produce<T>(count: number, value: T): ...T
 end
 
 
+function Table.enumerate<K, V>(container: Types.Mapping<K, V>, index: number?): () -> (number?, K?, V?)
+    local key, value;
+    local counter = index or 0
+
+    return function()
+        counter += 1
+        key, value = next(container, key)
+
+        if value == nil then
+            return value
+        end
+
+        return index, key, value
+    end
+end
+
+
+function Table.zip<V>(...: Types.Array<Types.Mapping<any, V>>): () -> ...V
+    local containers = {...}
+    local nilCount = 0
+    local containersLength = #containers
+    local keys = {}
+
+    return function()
+        local values = {}
+
+        for i = 1, containersLength do
+            local key, value;
+            local container = containers[i]
+            local previous = keys[i]
+
+            if typeof(container) == "table" then
+                key, value = next(container, previous)
+            else
+                key, value = container()
+
+                if value == nil then
+                    value = key
+                    key = nil
+                end
+            end
+
+            if value == nil then
+                nilCount += 1
+            else
+                keys[i] = key
+
+                table.insert(values, value)
+            end
+        end
+
+        if nilCount == containersLength then return end
+
+        return table.unpack(values)
+    end
+end
+
+
+function Table.keys<K>(container: Types.Mapping<K, any>): () -> K
+    local key, _;
+
+    return function()
+        key, _ = next(container, key)
+
+        return key
+    end
+end
+
+
+function Table.values<V>(container: Types.Mapping<any, V>): () -> V
+    local key, value;
+
+    return function()
+        key, value = next(container, key)
+
+        return value
+    end
+end
+
+
+function Table.extract<K>(container: Types.Mapping<K, any>, ...: K): ...K
+    local extracted = {}
+
+    for _, key in ipairs({...}) do
+        table.insert(extracted, key)
+    end
+
+    return table.unpack(extracted)
+end
+
+
 return Table
