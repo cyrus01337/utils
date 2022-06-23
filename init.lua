@@ -1,38 +1,50 @@
---!nolint UninitializedLocal
-local TS = game:GetService("TweenService")
-local Players = game:GetService("Players")
-local Run = game:GetService("RunService")
+--!nolint LocalShadow
+local Players: Players = game:GetService("Players")
+local RunService: RunService = game:GetService("RunService")
+local TweenService: TweenService = game:GetService("TweenService")
 
+local Constants = require(script.Constants)
 local Table = require(script.Table)
+local Types = require(script.Types)
 local UtilsMeta = {}
-local Utils = {}
+local Utils = {
+    Constants = Constants,
+    Table = Table
+}
 
 
-function UtilsMeta:__index(key)
-    return rawget(Utils, key) or Table[key]
+function UtilsMeta:__index(key: any): any
+    local lookupDirectory = {
+        Table
+    }
+
+    for _, module in ipairs(lookupDirectory) do
+        local propertyFound = module[key]
+
+        if propertyFound then return propertyFound end
+    end
+
+    return rawget(Utils, key)
 end
 
 
-function Utils.map(iterable, callback)
+function Utils.map<T>(container: Types.Table, callback: Types.Function<(any, any, Types.Table), (T)>): Types.Array<T>
     local ret = {}
 
-    for k, v in pairs(iterable) do
-        ret[k] = callback(v, k, iterable)
+    for k, v in pairs(container) do
+        ret[k] = callback(v, k, container)
     end
 
     return ret
 end
 
 
-function Utils.to(text, amount)
-    -- formatting the string prior to concatenation propagates a syntax error
-    local pattern = "%." .. tostring(amount) .. "s"
-
-    return string.format(pattern, text)
+function Utils.tobool(value: any): boolean
+    return not not value
 end
 
 
-function Utils.capitalise(text)
+function Utils.capitalise(text: string): string
     local head = string.upper(text:sub(1, 1))
     local tail = text:sub(2)
 
@@ -45,15 +57,12 @@ end
 Utils.capitalize = Utils.capitalise
 
 
-function Utils.timeit(callback, iterations)
-    iterations = if iterations ~= nil then iterations else 10000
-
-    assert(iterations > 0, "Cannot make iterations <= 0")
-
+function Utils.timeit(callback: Types.Function<(any), (any)>, iterations: number?)
+    iterations = iterations or 10000
     local min, max, message;
     local sum = 0
 
-    for _ = 1, iterations do
+    for _ = 1, iterations::number do
         local start = os.clock()
 
         callback()
@@ -84,30 +93,28 @@ function Utils.timeit(callback, iterations)
 end
 
 
-function Utils.strip(text)
-    text = tostring(text)
-
-    return text:match(Utils.Constants.STRIP_PATTERN) or text
+function Utils.strip(text: string): string
+    return text:match(Constants.STRIP_REGEX) or text
 end
 
 
-function Utils.parent(object, iterations)
-    -- suppresses and special-cases nil.Parent errors by returning nil
+function Utils.parent(instance: Instance, iterations: number): Instance?
+    -- suppresses and special-case nil.Parent errors by returning nil
     local success, ret = pcall(function()
+        local parent: Instance?;
+
         for _ = 1, iterations do
-            object = object["Parent"]
+            parent = instance.Parent
         end
 
-        return object
+        return parent
     end)
 
-    ret = if success then ret else nil
-
-    return ret
+    return if success then ret else nil
 end
 
 
-function Utils.isIn(value, iterable)
+function Utils.isIn(value: any, iterable: Types.Table): boolean
     for _, element in pairs(iterable) do
         if element == value then
             return true
@@ -118,9 +125,9 @@ function Utils.isIn(value, iterable)
 end
 
 
-function Utils.isOneOf(object, ...)
+function Utils.isOneOf(instance: Instance, ...: string): boolean
     for _, className in ipairs({...}) do
-        if object:IsA(className) then
+        if instance:IsA(className) then
             return true
         end
     end
@@ -129,9 +136,9 @@ function Utils.isOneOf(object, ...)
 end
 
 
-function Utils.abbreviate(number, decimalPlaces, limit)
-    decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
-    limit = if limit ~= nil then limit else 999
+function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number): string
+    local decimalPlaces: number = decimalPlaces or 0
+    local limit: number = limit or 999
 
     if number > limit then
         local spliced;
@@ -158,7 +165,7 @@ end
 
 
 -- https://devforum.roblox.com/t/waitforchild-recursive/17087/13
-function Utils.waitForDescendant(parent, path)
+function Utils.waitForDescendant(parent: Instance, path: string): Instance
     local descendant;
 
     for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
@@ -181,7 +188,7 @@ function Utils.waitForDescendant(parent, path)
 end
 
 
-function Utils.debounce(callback, returning)
+function Utils.debounce<P, R, T>(callback: Types.Function<(P), (R)>, returning: T): Types.Function<(P), (R | T)>
     local debounce = false
 
     return function(...)
@@ -196,7 +203,8 @@ function Utils.debounce(callback, returning)
 end
 
 
-function Utils.debounceTable(callback, returning)
+function Utils.debounceTable<P, R, T>(callback: Types.Function<(Player, P), (R)>,
+                                      returning: T): Types.Function<(Player, P), (R | T)>
     local debounces = {}
 
     return function(player, ...)
@@ -211,13 +219,12 @@ function Utils.debounceTable(callback, returning)
 end
 
 
-function Utils.findPlayerFromAncestor(part, recursive)
-    recursive = if recursive ~= nil then recursive else false
-
+function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): Instance?
     local modelFound;
+    local recursive: boolean = recursive or false
 
     while not modelFound do
-        modelFound = part:FindFirstAncestorOfClass("Model")
+        modelFound = instance:FindFirstAncestorOfClass("Model")
 
         if not modelFound then break end
 
@@ -227,16 +234,18 @@ function Utils.findPlayerFromAncestor(part, recursive)
             return playerFound
         end
 
-        part = modelFound
+        instance = modelFound
     end
 
     return nil
 end
 
 
-function Utils.playTweenAwait(tween, tweenInfo, properties)
-    if not tween:IsA("Tween") then
-        tween = TS:Create(tween, tweenInfo, properties)
+function Utils.playTweenAwait(target: Tween | Instance, tweenInfo: TweenInfo, properties: Types.Dictionary<any>)
+    local tween: Tween;
+
+    if not target:IsA("Tween") then
+        tween = TweenService:Create(target, tweenInfo, properties)
     end
 
     tween:Play()
@@ -249,16 +258,96 @@ function Utils.playTweenAwait(tween, tweenInfo, properties)
 end
 
 
-function Utils.create(instanceData)
+function Utils.enumerate(container: Types.Table, start: number?): Types.Function<nil, (number, any, any)>
+    local key, value;
+    local start: number = start or 0
+
+    return function()
+        start += 1
+        key, value = next(container, key)
+
+        if value == nil then
+            return value
+        end
+
+        return start, key, value
+    end
+end
+
+
+function Utils.zip<T>(...: Types.Table | Types.Function<(), (T)>): Types.Function<(), (T?)>
+    local containers = {...}
+    local nilCount = 0
+    local containersLength = #containers
+    local keys = {}
+
+    return function()
+        local values = {}
+
+        for i = 1, containersLength do
+            local key, value;
+            local container = containers[i]
+            local previous = keys[i]
+
+            if typeof(container) == "table" then
+                key, value = next(container, previous)
+            else
+                key, value = container()
+
+                if value == nil then
+                    value = key
+                    key = nil
+                end
+            end
+
+            if value == nil then
+                nilCount += 1
+            else
+                keys[i] = key
+
+                table.insert(values, value)
+            end
+        end
+
+        if nilCount == containersLength then return end
+
+        return table.unpack(values)
+    end
+end
+
+
+function Utils.keys<K>(dictionary: Types.Mapping<K, any>): Types.Function<(), (K)>
+    local key, _;
+
+    return function()
+        key, _ = next(dictionary, key)
+
+        return key
+    end
+end
+
+
+function Utils.values<V>(dictionary: Types.Mapping<any, V>): Types.Function<(), (V)>
+    local key, value;
+
+    return function()
+        key, value = next(dictionary, key)
+
+        return value
+    end
+end
+
+
+function Utils.create(instanceData: Types.Dictionary<any>)
     local lastKey;
     local count = 0
-    local instances = {}
+    local instances: Types.Dictionary<any> = {}
     local parents = {}
 
     for name, properties in pairs(instanceData) do
         lastKey = name
-        local className = Utils.pop(properties, "ClassName")
-        local parent = Utils.pop(properties, "Parent")
+        local className = Table.pop(properties, "ClassName")
+        local parent = Table.pop(properties, "Parent")
 
         if not className or typeof(className) ~= "string" then
             local message = string.format('Skipping %s - invalid ClassName "%s" given', name, tostring(className))
@@ -303,14 +392,14 @@ function Utils.create(instanceData)
     if count == 1 then
         instances = instances[lastKey]
     elseif count == 0 then
-        instances = nil
+        return nil
     end
 
     return instances
 end
 
 
-function Utils.resolvePath(path)
+function Utils.resolvePath(path: string): Instance?
     if path == nil then return end
 
     local count = 0
@@ -334,7 +423,7 @@ function Utils.resolvePath(path)
 end
 
 
-function Utils.round(number, places)
+function Utils.round(number: number, places: number): number
     places = if places then places else 0
 
     local power = 10 ^ places
@@ -343,7 +432,7 @@ function Utils.round(number, places)
 end
 
 
-function Utils.requireAll(...)
+function Utils.requireAll(...: Instance): ...any
     local modules = {}
 
     for _, path in ipairs({...}) do
@@ -357,10 +446,50 @@ end
 
 
 function Utils.runInStudio(callback)
-    if Run:IsStudio() then return end
+    if RunService:IsStudio() then return end
 
     callback()
 end
+
+
+local function isInvalidProperty(property: string, value: any): boolean
+    if not property then return true end
+
+    if typeof(value) == "function" then
+        return not value(property)
+    end
+
+    return property ~= value
+end
+
+
+function Utils.getChildrenWith(instance: Instance, properties: Types.Dictionary<any>): Types.Array<Instance>
+    local totalProperties = 0
+    local children = {}
+
+    for _, _ in pairs(properties) do
+        totalProperties += 1
+    end
+
+    for _, child in ipairs(instance:GetChildren()) do
+        local validProperties = 0
+
+        for property, value in pairs(properties) do
+            local propertyFound = child[property]
+
+            if isInvalidProperty(propertyFound, value) then break end
+
+            validProperties += 1
+        end
+
+        if validProperties == totalProperties then
+            table.insert(children, child)
+        end
+    end
+
+    return children
+end
+
 
 
 return setmetatable(Utils, UtilsMeta)

@@ -1,27 +1,25 @@
+local Types = require(script.Parent.Types)
+
 local Table = {}
 
 
-function Table.pop(iterable, key, fallback)
-    if typeof(key) == "number" then
-        return table.remove(iterable, key)
-    end
-
-    local ret = iterable[key]
+function Table.pop<T>(container: Types.Table, key: any, fallback: any): any
+    local ret = table.remove(container, key) or container[key]
 
     if ret == nil then
         return fallback
     end
 
-    iterable[key] = nil
+    container[key] = nil
 
     return ret
 end
 
 
-function Table.length(iterable)
+function Table.length(container: Types.Table): number
     local count = 0
 
-    for _, _ in pairs(iterable) do
+    for _, _ in pairs(container) do
         count += 1
     end
 
@@ -29,16 +27,16 @@ function Table.length(iterable)
 end
 
 
-function Table.choice(iterable, isArray)
-    isArray = if isArray ~= nil then isArray else false
+function Table.choice(container: Types.Table, isArray: boolean?): any
+    isArray = isArray or false
 
     if isArray then
-        return iterable[math.random(1, #iterable)]
+        return container[math.random(1, #container)]
     end
 
     local keys = {}
 
-    for key, _ in pairs(iterable) do
+    for key, _ in pairs(container) do
         table.insert(keys, key)
     end
 
@@ -46,7 +44,7 @@ function Table.choice(iterable, isArray)
 end
 
 
-function Table.copy(container)
+function Table.copy(container: Types.Table): Types.Table
     local copy = {}
 
     for key, value in pairs(container) do
@@ -61,7 +59,7 @@ function Table.copy(container)
 end
 
 
-function Table.deepcopy(container)
+function Table.deepcopy(container: Types.Table): Types.Table
     local copy = {}
 
     for key, value in pairs(container) do
@@ -82,8 +80,8 @@ end
 
 -- table.create but it actually works and adds n unique values instead of n
 -- references all pointing to the same memory address
-function Table.produce(count, value)
-    local toUnpack = {}
+function Table.produce<T>(count: number, value: T): ...T
+    local product = {}
 
     for _ = 1, count do
         local processed = value
@@ -92,91 +90,10 @@ function Table.produce(count, value)
             processed = Table.deepcopy(value)
         end
 
-        table.insert(toUnpack, processed)
+        table.insert(product, processed)
     end
 
-    return table.unpack(toUnpack)
-end
-
-
-function Table.enumerate(container, start)
-    start = if start ~= nil then start else 0
-
-    local key, value;
-
-    return function()
-        start += 1
-        key, value = next(container, key)
-
-        if value == nil then
-            return value
-        end
-
-        return start, key, value
-    end
-end
-
-
-function Table.zip(...)
-    local containers = {...}
-    local nilCount = 0
-    local containersLength = #containers
-    local keys = {}
-
-    return function()
-        local values = {}
-
-        for i = 1, containersLength do
-            local key, value;
-            local container = containers[i]
-            local previous = keys[i]
-
-            if typeof(container) == "table" then
-                key, value = next(container, previous)
-            else
-                key, value = container()
-
-                if value == nil then
-                    value = key
-                    key = nil
-                end
-            end
-
-            if value == nil then
-                nilCount += 1
-            else
-                keys[i] = key
-
-                table.insert(values, value)
-            end
-        end
-
-        if nilCount == containersLength then return end
-
-        return table.unpack(values)
-    end
-end
-
-
-function Table.keys(container)
-    local key, _;
-
-    return function()
-        key, _ = next(container, key)
-
-        return key
-    end
-end
-
-
-function Table.values(container)
-    local key, value;
-
-    return function()
-        key, value = next(container, key)
-
-        return value
-    end
+    return table.unpack(product)
 end
 
 
