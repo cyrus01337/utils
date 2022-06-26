@@ -122,8 +122,8 @@ export function random(obj) {
 }
 
 
-export function sleep(seconds) {
-    return new Promise(resolve => setTimeout(resolve, seconds));
+export function sleep(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds * 1000));
 }
 
 
