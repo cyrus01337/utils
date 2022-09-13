@@ -188,4 +188,17 @@ function Table.extract<K>(container: Types.Mapping<K, any>, ...: K): ...K
 end
 
 
+function Table.map<T>(container: Types.Table, callback: (any?, any?) -> T): Types.Array<T>
+    local mapped = {}
+
+    for key, value in container do
+        local result = callback(value, key)
+
+        table.insert(mapped, result)
+    end
+
+    return mapped
+end
+
+
 return Table
