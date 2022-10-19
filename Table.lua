@@ -155,7 +155,7 @@ function Table.zip<V>(...: Types.Array<Types.Mapping<any, V>>): () -> ...V
 end
 
 
-function Table.keys<K>(container: Types.Mapping<K, any>): () -> K
+function Table.keys<K>(container: Types.Mapping<K>): () -> K
     local key, _;
 
     return function()
@@ -177,7 +177,7 @@ function Table.values<V>(container: Types.Mapping<any, V>): () -> V
 end
 
 
-function Table.extract<K>(container: Types.Mapping<K, any>, ...: K): ...K
+function Table.extract<K>(container: Types.Mapping<K>, ...: K): ...K
     local extracted = {}
 
     for _, key in ipairs({...}) do
@@ -188,7 +188,7 @@ function Table.extract<K>(container: Types.Mapping<K, any>, ...: K): ...K
 end
 
 
-function Table.map<T>(container: Types.Table, callback: (any?, any?) -> T): Types.Array<T>
+function Table.map<T>(container: Types.Table, callback: (...any) -> T): Types.Array<T>
     local mapped = {}
 
     for key, value in container do
