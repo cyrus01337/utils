@@ -43,7 +43,7 @@ function Table.length(container: Table): number
 	return count
 end
 
-function Table.choice(container: Table): any
+function Table.choice<T>(container: Array<T> | Record<any, T>): T
 	if isArrayOptimistic(container) then
 		local asArray = container :: Array
 		local randomIndex = math.random(1, #container)
@@ -237,16 +237,6 @@ function Table.values<V>(container): () -> V
 
 		return value
 	end
-end
-
-function Table.extract<K>(container, ...: K): ...K
-	local extracted = {}
-
-	for _, key in { ... } do
-		table.insert(extracted, key)
-	end
-
-	return table.unpack(extracted)
 end
 
 return Table
