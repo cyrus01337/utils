@@ -1,496 +1,294 @@
---!nolint LocalShadow
+--!strict
+--!nolint UninitializedLocal
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
-local GoodSignal = require(ReplicatedStorage.ThirdParty.GoodSignal)
-local Constants = require(script.Constants)
-local Table = require(script.Table)
+local Table = require(script.Types.Table)
 local Types = require(script.Types)
+
 local Utils = {
-    Constants = Constants,
-    Table = Table
+	Table = Table,
 }
 
-type Callable<P..., R...> = (P...) -> R...
-type MappingFunction<T> = Callable<(any), (T)> & Callable<(any, any), (T)> & Callable<(any, any, Types.Table), (T)>
+function Utils.map<K, V>(
+	iterable: Types.Array<K> | Types.Record<K, V>,
+	callback: (V, K, Types.Array<K> | Types.Record<K, V>) -> any
+): Types.Array<V>
+	local mapped: Types.Array<V> = {}
 
+	-- TODO: Resolve type error
+	for key, value in iterable do
+		local result = callback(value, key, iterable)
 
-function Utils.map<T>(container: Types.Table, callback: MappingFunction<T>): Types.Array<T>
-    local ret = {}
+		table.insert(mapped, result)
+	end
 
-    for k, v in pairs(container) do
-        ret[k] = callback(v, k, container)
-    end
-
-    return ret
+	return mapped
 end
 
+function Utils.to(text: string, amount: number): string
+	-- formatting the string prior to concatenation propagates a syntax error
+	local pattern = "%." .. tostring(amount) .. "s"
 
-function Utils.tobool(value: any): boolean
-    return not not value
+	return string.format(pattern, text)
 end
-
 
 function Utils.capitalise(text: string): string
-    local head = string.upper(text:sub(1, 1))
-    local tail = text:sub(2)
+	local head = string.upper(text:sub(1, 1))
+	local tail = text:sub(2)
 
-    return head .. tail:lower()
+	return head .. tail:lower()
 end
-
 
 -- alias only to capitalise on lazy americans loving their shorthands and
 -- convert them into appreciating obvious acts of communism /j
 Utils.capitalize = Utils.capitalise
 
+function Utils.timeit(callback: () -> any, iterations: number?)
+	assert(iterations > 0, "Iterations must be greater than 0")
 
-function Utils.timeit(callback: (...any) -> ...any, iterations: number?)
-    iterations = iterations or 10000
-    local min, max, message;
-    local sum = 0
+	local min, max, message
+	local baseIterations = iterations or 10_000
+	local sum = 0
 
-    for _ = 1, iterations::number do
-        local start = os.clock()
+	for _ = 1, baseIterations do
+		local start = os.clock()
 
-        callback()
+		callback()
 
-        local difference = os.clock() - start
-        sum += difference
-        min = if not min or difference < min then difference else min
-        max = if not max or difference > max then difference else max
-    end
+		local difference = os.clock() - start
+		sum += difference
+		min = if not min or difference < min then difference else min
+		max = if not max or difference > max then difference else max
+	end
 
-    local avg = sum / iterations
-    local achievable = 1 / avg
+	local avg = sum / baseIterations
+	local achievable = 1 / avg
 
-    if achievable < 10 then
-        achievable = Utils.round(achievable, 3)
-    end
+	if achievable < 10 then
+		achievable = Utils.round(achievable, 3)
+	end
 
-    message = (
-        "Results (%d iterations):\n\n" ..
+	message = (
+		"Results (%d iterations):\n\n"
+		.. "Min: %.9fs\n"
+		.. "Max: %.9fs\n"
+		.. "Avg: %.9fs\n"
+		.. "Consistently Achievable: %s/s"
+	)
 
-        "Min: %.9fs\n" ..
-        "Max: %.9fs\n" ..
-        "Avg: %.9fs\n" ..
-        "Consistently Achievable: %s/s"
-    )
-
-    warn(message:format(iterations, min, max, avg, tostring(achievable)))
+	warn(message:format(baseIterations, min, max, avg, tostring(achievable)))
 end
-
 
 function Utils.strip(text: string): string
-    return text:match(Constants.STRIP_REGEX) or text
+	text = tostring(text)
+
+	return text:match(Utils.Constants.STRIP_PATTERN) or text
 end
 
+function Utils.parent(object: Instance, iterations: number): Instance?
+	-- suppresses and special-cases nil.Parent errors by returning nil
+	local success, result = pcall(function()
+		for _ = 1, iterations do
+			object = object["Parent"] :: Instance
+		end
 
-function Utils.parent(instance: Instance, iterations: number): Instance?
-    -- suppresses and special-case nil.Parent errors by returning nil
-    local success, ret = pcall(function()
-        local parent: Instance?;
+		return object
+	end)
 
-        for _ = 1, iterations do
-            parent = instance.Parent
-        end
-
-        return parent
-    end)
-
-    return if success then ret else nil
+	return if success then result else nil
 end
 
+function Utils.isIn(value: any, iterable: Types.Table): any?
+	for _, element in iterable do
+		if element == value then
+			return true
+		end
+	end
 
-function Utils.isIn(value: any, iterable: Types.Table): boolean
-    for _, element in pairs(iterable) do
-        if element == value then
-            return true
-        end
-    end
-
-    return false
+	return false
 end
-
 
 function Utils.isOneOf(instance: Instance, ...: string): boolean
-    for _, className in ipairs({...}) do
-        if instance:IsA(className) then
-            return true
-        end
-    end
+	for _, className in { ... } do
+		if instance:IsA(className) then
+			return true
+		end
+	end
 
-    return false
+	return false
 end
-
 
 function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number?): string
-    local decimalPlaces: number = decimalPlaces or 0
-    local limit: number = limit or 999
+	local realDecimalPlaces = decimalPlaces or 0
+	local realLimit = limit or 999
 
-    if number > limit then
-        local spliced;
-        -- for grabbing #digits, log10 returns #digits - 1 hence the correction
-        local length = math.floor(math.log10(number)) + 1
-        local index = math.floor(math.abs((length - 1) / 3))
-        local digits = 1 + index * 3
-        local char = Utils.Constants.ABBREVIATIONS[index]
-        local difference = math.abs(length - digits) + 1
-        local initial = number / 10 ^ (length - difference)
+	if number > realLimit then
+		local spliced: number | string
+		-- for grabbing #digits, log10 returns #digits - 1 hence the correction
+		local length = math.floor(math.log10(number)) + 1
+		local index = math.floor(math.abs((length - 1) / 3))
+		local digits = 1 + index * 3
+		local char = Utils.Constants.ABBREVIATIONS[index]
+		local difference = math.abs(length - digits) + 1
+		local initial = number / 10 ^ (length - difference)
 
-        if decimalPlaces <= 0 then
-            spliced = math.floor(initial)
-        else
-            local formatting = "%." .. difference .. "f"
-            spliced = formatting:format(initial)
-        end
+		if realDecimalPlaces <= 0 then
+			spliced = math.floor(initial)
+		else
+			local formatting = "%." .. difference .. "f"
+			spliced = formatting:format(initial)
+		end
 
-        return spliced .. char
-    end
+		return spliced .. char
+	end
 
-    return tostring(number)
+	return tostring(number)
 end
 
+function Utils.waitForDescendant(parent: Instance, name: string): Instance
+	local descendantsToReview: Types.Array<Instance> = {}
 
--- https://devforum.roblox.com/t/waitforchild-recursive/17087/13
-function Utils.waitForDescendant(parent: Instance, path: string): Instance
-    local descendant;
+	while true do
+		parent.DescendantAdded:Connect(function(descendant)
+			table.insert(descendantsToReview, descendant)
+		end)
 
-    for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
-        descendant = parent:FindFirstChild(name)
+		while #descendantsToReview > 0 do
+			local index, nextDescendant = next(descendantsToReview)
 
-        if descendant then
-            parent = descendant
+			if nextDescendant.Name == name then
+				return nextDescendant
+			end
 
-            continue
-        end
+			table.remove(descendantsToReview, index)
+		end
 
-        while not descendant or descendant.Name ~= name do
-            descendant = parent.DescendantAdded:Wait()
-        end
+		local nextDescendant = parent.DescendantAdded:Wait()
 
-        parent = descendant
-    end
-
-    return descendant
+		if nextDescendant.Name == name then
+			return nextDescendant
+		end
+	end
 end
 
+function Utils.debounce<T>(callback: (...any) -> T, returning: T?): (...any) -> T?
+	local runningCallback = false
 
-function Utils.debounce<P, R, T>(callback: (P) -> R, returning: T): (P) -> R | T
-    local debounce = false
+	return function(...)
+		if runningCallback then
+			return returning
+		end
 
-    return function(...)
-        if debounce then return returning end
+		runningCallback = true
+		local result = callback(...)
+		runningCallback = false
 
-        debounce = true
-        local result = callback(...)
-        debounce = false
-
-        return result
-    end
+		return result
+	end
 end
 
+function Utils.debounceTypes.Table<T>(callback: (...any) -> T, returning: T?): (...any) -> T?
+	local runningCallbackTracker: Types.Record<Player, boolean> = {}
 
-function Utils.debounceTable<P, R, T>(callback: (Player, P) -> R, returning: T): (Player, P) -> R | T
-    local debounces = {}
+	return function(player, ...)
+		local runningCallback = runningCallbackTracker[player]
 
-    return function(player, ...)
-        if debounces[player] then return returning end
+		if runningCallback then
+			return returning
+		end
 
-        debounces[player] = true
-        local result = callback(player, ...)
-        debounces[player] = false
+		runningCallbackTracker[player] = true
+		local result = callback(player, ...)
+		runningCallbackTracker[player] = false
 
-        return result
-    end
+		return result
+	end
 end
 
+function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): Player?
+	local isRecursive = recursive or false
+	local modelFound: Instance?
 
-function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): Instance?
-    local modelFound;
-    local recursive: boolean = recursive or false
+	while not modelFound do
+		modelFound = instance:FindFirstAncestorOfClass("Model")
 
-    while not modelFound do
-        modelFound = instance:FindFirstAncestorOfClass("Model")
+		if not modelFound then
+			return nil
+		end
 
-        if not modelFound then break end
+		local playerFound = Players:GetPlayerFromCharacter(modelFound)
 
-        local playerFound = Players:GetPlayerFromCharacter(modelFound)
+		if playerFound or not isRecursive then
+			return playerFound
+		end
 
-        if playerFound or not recursive then
-            return playerFound
-        end
+		instance = modelFound
+	end
 
-        instance = modelFound
-    end
-
-    return nil
+	-- need the extra return to silence type error where not all code paths
+	-- provide the return type
+	return nil
 end
 
+function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, properties: Types.Record)
+	local tweenToPlay: Tween = if tween:IsA("Tween") then tween else TweenService:Create(tween, tweenInfo, properties)
 
-function Utils.playTweenAwait(target: Tween | Instance, tweenInfo: TweenInfo, properties: Types.Dictionary<any>)
-    local tween: Tween;
+	tweenToPlay:Play()
 
-    if not target:IsA("Tween") then
-        tween = TweenService:Create(target, tweenInfo, properties)
-    end
-
-    tween:Play()
-
-    -- incase the tween completes very quickly and the event fires before the
-    -- script has time to wait for it, this is alternatively used
-    if tween.PlaybackState ~= Enum.PlaybackState.Completed then
-        tween.Completed:Wait()
-    end
+	-- incase the tween completes very quickly and the event fires before the
+	-- script has time to wait for it, we first check if the tween has completed
+	-- and if not, wait for it to
+	if tweenToPlay.PlaybackState ~= Enum.PlaybackState.Completed then
+		tweenToPlay.Completed:Wait()
+	end
 end
-
-
-function Utils.enumerate<K, V>(container: Types.Mapping<K, V>, start: number?): () -> (number, K, V)
-    local key, value;
-    local start: number = start or 0
-
-    return function()
-        start += 1
-        key, value = next(container, key)
-
-        if value == nil then
-            return value
-        end
-
-        return start, key, value
-    end
-end
-
-
-function Utils.zip<T>(...: Types.Mapping<any, T> | () -> T): () -> T
-    local containers = {...}
-    local nilCount = 0
-    local containersLength = #containers
-    local keys = {}
-
-    return function()
-        local values = {}
-
-        for i = 1, containersLength do
-            local key, value;
-            local container = containers[i]
-            local previous = keys[i]
-
-            if typeof(container) == "table" then
-                key, value = next(container, previous)
-            else
-                key, value = container()
-
-                if value == nil then
-                    value = key
-                    key = nil
-                end
-            end
-
-            if value == nil then
-                nilCount += 1
-            else
-                keys[i] = key
-
-                table.insert(values, value)
-            end
-        end
-
-        if nilCount == containersLength then return end
-
-        return table.unpack(values)
-    end
-end
-
-
-function Utils.keys<K>(dictionary: Types.Mapping<K, any>): () -> K
-    local key, _;
-
-    return function()
-        key, _ = next(dictionary, key)
-
-        return key
-    end
-end
-
-
-function Utils.values<V>(dictionary: Types.Mapping<any, V>): () -> V
-    local key, value;
-
-    return function()
-        key, value = next(dictionary, key)
-
-        return value
-    end
-end
-
-
-function Utils.create(instanceData: Types.Dictionary<any>)
-    local lastKey;
-    local count = 0
-    local instances: Types.Dictionary<any> = {}
-    local parents = {}
-
-    for name, properties in pairs(instanceData) do
-        lastKey = name
-        local className = Table.pop(properties, "ClassName")
-        local parent = Table.pop(properties, "Parent")
-
-        if not className or typeof(className) ~= "string" then
-            local message = string.format('Skipping %s - invalid ClassName "%s" given', name, tostring(className))
-
-            warn(message)
-            continue
-        end
-
-        local instance = Instance.new(className)
-              instance.Name = if properties.Name then properties.Name else name
-
-        for key, value in pairs(properties) do
-            instance[key] = value
-        end
-
-        local parentType = typeof(parent)
-
-        if parent and parentType == "Instance" then
-            instance.Parent = parent
-        elseif parentType == "string" then
-            local parentFound = parents[parent]
-
-            if parentFound then
-                instance.Parent = parentFound
-            else
-                parents[parent] = instance
-            end
-        end
-
-        count += 1
-        instances[name] = instance
-    end
-
-    for name, instance in pairs(parents) do
-        local parentFound = instances[name]
-
-        if parentFound then
-            instance.Parent = parentFound
-        end
-    end
-
-    if count == 1 then
-        instances = instances[lastKey]
-    elseif count == 0 then
-        return nil
-    end
-
-    return instances
-end
-
 
 function Utils.resolvePath(path: string): Instance?
-    if path == nil then return end
+	if path == nil then
+		return nil
+	elseif path:lower() == "game" then
+		return game
+	end
 
-    local count = 0
-    local instance = game
+	local instance: Instance
 
-    for name in path:split(".") do
-        count += 1
+	for _, name in path:split(".") do
+		local nextInstanceFound = instance:FindFirstChild(name)
 
-        if name:lower() == "game" and count == 1 then
-            continue
-        end
+		if not nextInstanceFound then
+			return nil
+		end
 
-        local instanceFound = instance:FindFirstChild(name)
+		instance = nextInstanceFound
+	end
 
-        if not instanceFound then
-            return nil
-        end
-    end
-
-    return instance
+	return instance
 end
-
 
 function Utils.round(number: number, places: number): number
-    places = if places then places else 0
+	places = places or 0
+	local power = 10 ^ places
 
-    local power = 10 ^ places
-
-    return math.floor(number * power) / power
+	return math.floor(number * power) / power
 end
 
+function Utils.requireAll(...: ModuleScript): ...Types.Table
+	local modules = {}
 
-function Utils.requireAll(...: Instance): ...any
-    local modules = {}
+	for _, path in { ... } do
+		-- TODO: Resolve
+		local module = require(path)
 
-    for _, path in ipairs({...}) do
-        local module = require(path)
+		table.insert(modules, module)
+	end
 
-        table.insert(modules, module)
-    end
-
-    return table.unpack(modules)
+	return table.unpack(modules)
 end
 
-
-function Utils.runInStudio(callback)
-    if RunService:IsStudio() then return end
-
-    callback()
+function Utils.runInStudio<T>(callback: () -> T): T?
+	return if RunService:IsStudio() then callback() else nil
 end
-
-
-local function isInvalidProperty(property: string, value: any): boolean
-    if not property then return true end
-
-    if typeof(value) == "function" then
-        return not value(property)
-    end
-
-    return property ~= value
-end
-
-
-function Utils.getChildrenWith(instance: Instance, properties: Types.Dictionary<any>): Types.Array<Instance>
-    local totalProperties = 0
-    local children = {}
-
-    for _, _ in pairs(properties) do
-        totalProperties += 1
-    end
-
-    for _, child in ipairs(instance:GetChildren()) do
-        local validProperties = 0
-
-        for property, value in pairs(properties) do
-            local propertyFound = child[property]
-
-            if isInvalidProperty(propertyFound, value) then break end
-
-            validProperties += 1
-        end
-
-        if validProperties == totalProperties then
-            table.insert(children, child)
-        end
-    end
-
-    return children
-end
-
-
-function Utils.waitForEvents(...: RBXScriptSignal)
-    local events = {...}
-    local eventFired = GoodSignal.new()
-
-    for _, event in events do
-        event:Connect(function()
-            eventFired:Fire()
-        end)
-    end
-
-    eventFired:Wait()
-end
-
 
 return Utils

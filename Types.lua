@@ -1,9 +1,5 @@
-local Types = {}
+export type Record<K = string, V = any> = { [K]: V }
+export type Array<T = any> = { [number]: T }
+export type Table = Types.Record | Types.Array
 
-export type Array<V = any> = { [number]: V }
-export type Dictionary<V = any> = { [string]: V }
-export type Mapping<K = any, V = any> = { [K]: V }
-export type Table = Mapping<any, any>
-export type Tuple<T = any> = (T)
-
-return Types
+return {}

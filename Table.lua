@@ -1,204 +1,240 @@
+--!strict
 local Types = require(script.Parent.Types)
 
 local Table = {}
 
+local function isArrayOptimistic(container: Types.Table): boolean
+	local firstKey = next(container)
 
-function Table.pop(container: Types.Table, key: any, fallback: any): any
-    local ret = table.remove(container, key) or container[key]
-
-    if ret == nil then
-        return fallback
-    end
-
-    container[key] = nil
-
-    return ret
+	return typeof(firstKey) == "number"
 end
 
+function Table.pop<T>(container: Types.Array<T> | Types.Record<any, T>, key: any, fallback: T?): T?
+	if isArrayOptimistic(container) then
+		local asArray = container :: Types.Array<T>
+		local popped = table.remove(asArray, key)
+
+		return if popped ~= nil then popped else fallback
+	end
+
+	local asDict = container :: Types.Record<string, T>
+	local popped = asDict[key]
+	asDict[key] = nil
+
+	return if popped ~= nil then popped else fallback
+end
 
 function Table.length(container: Types.Table): number
-    local count = 0
+	local count = #container
 
-    for _, _ in pairs(container) do
-        count += 1
-    end
+	if count > 0 then
+		return count
+	end
 
-    return count
+	count = 0
+
+	-- TODO: Resolve type error
+	for _, _ in container do
+		count += 1
+	end
+
+	return count
 end
 
+function Table.choice<T>(container: Types.Array<T> | Types.Record<any, T>): T
+	if isArrayOptimistic(container) then
+		local asArray = container :: Types.Array
+		local randomIndex = math.random(1, #container)
 
-function Table.choice(container: Types.Table, isArray: boolean?): any
-    isArray = isArray or false
+		return asArray[randomIndex]
+	end
 
-    if isArray then
-        return container[math.random(1, #container)]
-    end
+	local asDict = container :: Types.Record
+	local keys = {}
 
-    local keys = {}
+	for key, _ in asDict do
+		table.insert(keys, key)
+	end
 
-    for key, _ in pairs(container) do
-        table.insert(keys, key)
-    end
+	local randomKey = keys[math.random(1, #keys)]
 
-    return keys[math.random(1, #keys)]
+	return asDict[randomKey]
 end
 
+function Table.copy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types.Array<K> | Types.Record<K, V>
+	local copy = {}
 
-function Table.copy(container: Types.Table): Types.Table
-    local copy = {}
+	-- TODO: Resolve type error
+	for key, value in container do
+		if typeof(key) == "number" then
+			table.insert(copy, key, value)
+		else
+			copy[key] = value
+		end
+	end
 
-    for key, value in pairs(container) do
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
+	return copy
 end
 
+function Table.deepCopy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types.Array<K> | Types.Record<K, V>
+	local copy = {}
 
-function Table.deepcopy(container: Types.Table): Types.Table
-    local copy = {}
+	-- TODO: Resolve type error
+	for key, value in container do
+		if typeof(value) == "table" then
+			value = Table.deepCopy(value)
+		end
 
-    for key, value in pairs(container) do
-        if typeof(value) == "table" then
-            value = Table.deepcopy(value)
-        end
+		if typeof(key) == "number" then
+			table.insert(copy, key, value)
+		else
+			copy[key] = value
+		end
+	end
 
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
+	return copy
 end
 
-
+-- TODO: Revise
 -- table.create but it actually works and adds n unique values instead of n
 -- references all pointing to the same memory address
-function Table.produce<T>(count: number, value: T): ...T
-    local product = {}
+function Table.produce<T>(count: number, value: T): Types.Array<T>
+	local toUnpack: Types.Array<T> = {}
 
-    for _ = 1, count do
-        local processed = value
+	for _ = 1, count do
+		local processed = if typeof(value) ~= "table" then value else Table.deepCopy(value)
 
-        if typeof(value) == "table" then
-            processed = Table.deepcopy(value)
-        end
+		-- TODO: Silence type error
+		-- Because generic functions aren't completely developed, I can't pass
+		-- in the types needed for Table.deepCopy to receive and use within it's
+		-- scope, causing all generics to be never
+		table.insert(toUnpack, processed)
+	end
 
-        table.insert(product, processed)
-    end
-
-    return table.unpack(product)
+	return toUnpack
 end
 
+function Table.enumerate<K, V>(container: Types.Table, index: number?): () -> (number, K, V)
+	local enumeration = index or 0
 
-function Table.enumerate<K, V>(container: Types.Mapping<K, V>, index: number?): () -> (number?, K?, V?)
-    local key, value;
-    local counter = index or 0
+	local key: K
+	local value: V
+	local nextKey: K?
+	local nextValue: V?
 
-    return function()
-        counter += 1
-        key, value = next(container, key)
+	return function()
+		enumeration += 1
+		nextKey, nextValue = next(container, key)
 
-        if value == nil then
-            return value
-        end
+		if nextKey == nil and nextValue == nil then
+			-- TODO: Silence type error
+			-- If an iterator returns the single value nil, it implicitly stops
+			-- the iteration
+			return nil
+		end
 
-        return index, key, value
-    end
+		key = nextKey :: K
+		value = nextValue :: V
+
+		return enumeration, key, value
+	end
 end
 
+function Table.zip<V>(...: Types.Table): () -> ...V
+	local containers = { ... }
+	local nilCount = 0
+	local containersLength = #containers
+	local keys = {}
 
-function Table.zip<V>(...: Types.Array<Types.Mapping<any, V>>): () -> ...V
-    local containers = {...}
-    local nilCount = 0
-    local containersLength = #containers
-    local keys = {}
+	return function()
+		local key: any
+		local value: V
+		local nextValue: V?
+		local values = {}
 
-    return function()
-        local values = {}
+		for i = 1, containersLength do
+			local container = containers[i]
+			local previous = keys[i]
+			key, nextValue = next(container, previous)
 
-        for i = 1, containersLength do
-            local key, value;
-            local container = containers[i]
-            local previous = keys[i]
+			if nextValue == nil then
+				nilCount += 1
+			else
+				keys[i] = key
+				value = nextValue
 
-            if typeof(container) == "table" then
-                key, value = next(container, previous)
-            else
-                key, value = container()
+				table.insert(values, value)
+			end
+		end
 
-                if value == nil then
-                    value = key
-                    key = nil
-                end
-            end
+		-- TODO: Revise
+		if nilCount == containersLength then
+			return
+		end
 
-            if value == nil then
-                nilCount += 1
-            else
-                keys[i] = key
-
-                table.insert(values, value)
-            end
-        end
-
-        if nilCount == containersLength then return end
-
-        return table.unpack(values)
-    end
+		return table.unpack(values)
+	end
 end
 
+function Table.keys<K>(container: Types.Table): () -> K
+	local key: K
+	local nextKey: K?
+	local firstRun = true
 
-function Table.keys<K>(container: Types.Mapping<K>): () -> K
-    local key, _;
+	-- TODO: Revise
+	return function()
+		-- Have to do it this way or linter bullies me
+		if firstRun then
+			firstRun = false
+			nextKey = next(container)
 
-    return function()
-        key, _ = next(container, key)
+			if nextKey == nil then
+				return nil
+			end
 
-        return key
-    end
+			key = nextKey
+		else
+			nextKey = next(container, key)
+
+			if nextKey == nil then
+				return nil
+			end
+
+			key = nextKey
+		end
+
+		return key
+	end
 end
 
+function Table.values<V>(container): () -> V
+	local value: V
+	local nextKey: any
+	local nextValue: V?
+	local firstRun = true
 
-function Table.values<V>(container: Types.Mapping<any, V>): () -> V
-    local key, value;
+	return function()
+		if firstRun then
+			firstRun = false
+			nextKey, nextValue = next(container)
 
-    return function()
-        key, value = next(container, key)
+			if nextKey == nil and nextValue == nil then
+				return nil
+			end
 
-        return value
-    end
+			value = nextValue
+		else
+			nextKey, nextValue = next(container, nextKey)
+
+			if nextKey == nil and nextValue == nil then
+				return nil
+			end
+
+			value = nextValue
+		end
+
+		return value
+	end
 end
 
-
-function Table.extract<K>(container: Types.Mapping<K>, ...: K): ...K
-    local extracted = {}
-
-    for _, key in ipairs({...}) do
-        table.insert(extracted, key)
-    end
-
-    return table.unpack(extracted)
-end
-
-
-function Table.map<T>(container: Types.Table, callback: (...any) -> T): Types.Array<T>
-    local mapped = {}
-
-    for key, value in container do
-        local result = callback(value, key)
-
-        table.insert(mapped, result)
-    end
-
-    return mapped
-end
-
-
-return Table
+return Types.Table

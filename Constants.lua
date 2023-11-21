@@ -1,5 +1,5 @@
+--!strict
 return {
-    STRIP_REGEX = "^%s*(%S?.*%S+)%s*$",
-    URL_REGEX = "^https?://[%p%w]+$",
+    STRIP_PATTERN = "^%s*(%S?.*%S+)%s*$",
     ABBREVIATIONS = {"K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "De"}
 }
