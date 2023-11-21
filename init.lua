@@ -7,12 +7,9 @@ local TweenService = game:GetService("TweenService")
 local Table = require(script.Types.Table)
 local Types = require(script.Types)
 
-local UtilsMeta = {}
-local Utils = {}
-
-function UtilsMeta:__index(key: any): any?
-	return rawget(Utils, key) or Table[key]
-end
+local Utils = {
+	Table = Table,
+}
 
 function Utils.map<K, V>(
 	iterable: Types.Array<K> | Types.Record<K, V>,
@@ -248,67 +245,6 @@ function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, pro
 	end
 end
 
--- TODO: Remove
-function Utils.create(instanceData): Instance
-	local lastKey: string
-	local count = 0
-	local instances = {}
-	local parents = {}
-
-	for name, properties in pairs(instanceData) do
-		lastKey = name
-		local className = Utils.pop(properties, "ClassName")
-		local parent = Utils.pop(properties, "Parent")
-
-		if not className or typeof(className) ~= "string" then
-			local message = string.format('Skipping %s - invalid ClassName "%s" given', name, tostring(className))
-
-			warn(message)
-			continue
-		end
-
-		local instance = Instance.new(className)
-		instance.Name = if properties.Name then properties.Name else name
-
-		for key, value in pairs(properties) do
-			instance[key] = value
-		end
-
-		local parentType = typeof(parent)
-
-		if parent and parentType == "Instance" then
-			instance.Parent = parent
-		elseif parentType == "string" then
-			local parentFound = parents[parent]
-
-			if parentFound then
-				instance.Parent = parentFound
-			else
-				parents[parent] = instance
-			end
-		end
-
-		count += 1
-		instances[name] = instance
-	end
-
-	for name, instance in pairs(parents) do
-		local parentFound = instances[name]
-
-		if parentFound then
-			instance.Parent = parentFound
-		end
-	end
-
-	if count == 1 then
-		instances = instances[lastKey]
-	elseif count == 0 then
-		instances = nil
-	end
-
-	return instances
-end
-
 function Utils.resolvePath(path: string): Instance?
 	if path == nil then
 		return nil
@@ -355,4 +291,4 @@ function Utils.runInStudio<T>(callback: () -> T): T?
 	return if RunService:IsStudio() then callback() else nil
 end
 
-return setmetatable(Utils, UtilsMeta)
+return Utils
