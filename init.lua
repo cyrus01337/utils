@@ -4,7 +4,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
-local Table = require(script.Table)
+local Table = require(script.Types.Table)
+local Types = require(script.Types)
 
 local UtilsMeta = {}
 local Utils = {}
@@ -13,14 +14,20 @@ function UtilsMeta:__index(key: any): any?
 	return rawget(Utils, key) or Table[key]
 end
 
-function Utils.map<K, V>(iterable, callback: () -> V)
-	local ret = {}
+function Utils.map<K, V>(
+	iterable: Types.Array<K> | Types.Record<K, V>,
+	callback: (V, K, Types.Array<K> | Types.Record<K, V>) -> any
+): Types.Array<V>
+	local mapped: Types.Array<V> = {}
 
-	for k, v in pairs(iterable) do
-		ret[k] = callback(v, k, iterable)
+	-- TODO: Resolve type error
+	for key, value in iterable do
+		local result = callback(value, key, iterable)
+
+		table.insert(mapped, result)
 	end
 
-	return ret
+	return mapped
 end
 
 function Utils.to(text: string, amount: number): string
@@ -41,15 +48,14 @@ end
 -- convert them into appreciating obvious acts of communism /j
 Utils.capitalize = Utils.capitalise
 
-function Utils.timeit(callback: () -> any, iterations: number): nil
-	iterations = if iterations ~= nil then iterations else 10000
-
-	assert(iterations > 0, "Cannot make iterations <= 0")
+function Utils.timeit(callback: () -> any, iterations: number?)
+	assert(iterations > 0, "Iterations must be greater than 0")
 
 	local min, max, message
+	local baseIterations = iterations or 10_000
 	local sum = 0
 
-	for _ = 1, iterations do
+	for _ = 1, baseIterations do
 		local start = os.clock()
 
 		callback()
@@ -60,7 +66,7 @@ function Utils.timeit(callback: () -> any, iterations: number): nil
 		max = if not max or difference > max then difference else max
 	end
 
-	local avg = sum / iterations
+	local avg = sum / baseIterations
 	local achievable = 1 / avg
 
 	if achievable < 10 then
@@ -75,7 +81,7 @@ function Utils.timeit(callback: () -> any, iterations: number): nil
 		.. "Consistently Achievable: %s/s"
 	)
 
-	warn(message:format(iterations, min, max, avg, tostring(achievable)))
+	warn(message:format(baseIterations, min, max, avg, tostring(achievable)))
 end
 
 function Utils.strip(text: string): string
@@ -86,21 +92,19 @@ end
 
 function Utils.parent(object: Instance, iterations: number): Instance?
 	-- suppresses and special-cases nil.Parent errors by returning nil
-	local success, ret = pcall(function()
+	local success, result = pcall(function()
 		for _ = 1, iterations do
-			object = object["Parent"]
+			object = object["Parent"] :: Instance
 		end
 
 		return object
 	end)
 
-	ret = if success then ret else nil
-
-	return ret
+	return if success then result else nil
 end
 
-function Utils.isIn(value: any, iterable: table): any?
-	for _, element in pairs(iterable) do
+function Utils.isIn(value: any, iterable: Types.Table): any?
+	for _, element in iterable do
 		if element == value then
 			return true
 		end
@@ -110,7 +114,7 @@ function Utils.isIn(value: any, iterable: table): any?
 end
 
 function Utils.isOneOf(instance: Instance, ...: string): boolean
-	for _, className in ipairs({ ... }) do
+	for _, className in { ... } do
 		if instance:IsA(className) then
 			return true
 		end
@@ -120,11 +124,11 @@ function Utils.isOneOf(instance: Instance, ...: string): boolean
 end
 
 function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number?): string
-	decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
-	limit = if limit ~= nil then limit else 999
+	local realDecimalPlaces = decimalPlaces or 0
+	local realLimit = limit or 999
 
-	if number > limit then
-		local spliced
+	if number > realLimit then
+		local spliced: number | string
 		-- for grabbing #digits, log10 returns #digits - 1 hence the correction
 		local length = math.floor(math.log10(number)) + 1
 		local index = math.floor(math.abs((length - 1) / 3))
@@ -133,7 +137,7 @@ function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number?
 		local difference = math.abs(length - digits) + 1
 		local initial = number / 10 ^ (length - difference)
 
-		if decimalPlaces <= 0 then
+		if realDecimalPlaces <= 0 then
 			spliced = math.floor(initial)
 		else
 			local formatting = "%." .. difference .. "f"
@@ -146,99 +150,105 @@ function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number?
 	return tostring(number)
 end
 
--- https://devforum.roblox.com/t/waitforchild-recursive/17087/13
-function Utils.waitForDescendant(parent: Instance, path: string): Instance
-	local descendant
+function Utils.waitForDescendant(parent: Instance, name: string): Instance
+	local descendantsToReview: Types.Array<Instance> = {}
 
-	for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
-		descendant = parent:FindFirstChild(name)
+	while true do
+		parent.DescendantAdded:Connect(function(descendant)
+			table.insert(descendantsToReview, descendant)
+		end)
 
-		if descendant then
-			parent = descendant
+		while #descendantsToReview > 0 do
+			local index, nextDescendant = next(descendantsToReview)
 
-			continue
+			if nextDescendant.Name == name then
+				return nextDescendant
+			end
+
+			table.remove(descendantsToReview, index)
 		end
 
-		while not descendant or descendant.Name ~= name do
-			descendant = parent.DescendantAdded:Wait()
-		end
+		local nextDescendant = parent.DescendantAdded:Wait()
 
-		parent = descendant
+		if nextDescendant.Name == name then
+			return nextDescendant
+		end
 	end
-
-	return descendant
 end
 
-function Utils.debounce<T>(callback: () -> any, returning: T?): T | any?
-	local debounce = false
+function Utils.debounce<T>(callback: (...any) -> T, returning: T?): (...any) -> T?
+	local runningCallback = false
 
 	return function(...)
-		if debounce then
+		if runningCallback then
 			return returning
 		end
 
-		debounce = true
+		runningCallback = true
 		local result = callback(...)
-		debounce = false
+		runningCallback = false
 
 		return result
 	end
 end
 
-function Utils.debounceTable<T>(callback: () -> any, returning: T?): T | any?
-	local debounces = {}
+function Utils.debounceTypes.Table<T>(callback: (...any) -> T, returning: T?): (...any) -> T?
+	local runningCallbackTracker: Types.Record<Player, boolean> = {}
 
 	return function(player, ...)
-		if debounces[player] then
+		local runningCallback = runningCallbackTracker[player]
+
+		if runningCallback then
 			return returning
 		end
 
-		debounces[player] = true
+		runningCallbackTracker[player] = true
 		local result = callback(player, ...)
-		debounces[player] = false
+		runningCallbackTracker[player] = false
 
 		return result
 	end
 end
 
 function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): Player?
-	recursive = if recursive ~= nil then recursive else false
-
-	local modelFound
+	local isRecursive = recursive or false
+	local modelFound: Instance?
 
 	while not modelFound do
 		modelFound = instance:FindFirstAncestorOfClass("Model")
 
 		if not modelFound then
-			break
+			return nil
 		end
 
 		local playerFound = Players:GetPlayerFromCharacter(modelFound)
 
-		if playerFound or not recursive then
+		if playerFound or not isRecursive then
 			return playerFound
 		end
 
 		instance = modelFound
 	end
 
+	-- need the extra return to silence type error where not all code paths
+	-- provide the return type
 	return nil
 end
 
-function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, properties): nil
-	if not tween:IsA("Tween") then
-		tween = TweenService:Create(tween, tweenInfo, properties)
-	end
+function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, properties: Types.Record)
+	local tweenToPlay: Tween = if tween:IsA("Tween") then tween else TweenService:Create(tween, tweenInfo, properties)
 
-	tween:Play()
+	tweenToPlay:Play()
 
 	-- incase the tween completes very quickly and the event fires before the
-	-- script has time to wait for it, this is alternatively used
-	if tween.PlaybackState ~= Enum.PlaybackState.Completed then
-		tween.Completed:Wait()
+	-- script has time to wait for it, we first check if the tween has completed
+	-- and if not, wait for it to
+	if tweenToPlay.PlaybackState ~= Enum.PlaybackState.Completed then
+		tweenToPlay.Completed:Wait()
 	end
 end
 
+-- TODO: Remove
 function Utils.create(instanceData): Instance
 	local lastKey: string
 	local count = 0
@@ -301,41 +311,38 @@ end
 
 function Utils.resolvePath(path: string): Instance?
 	if path == nil then
-		return
+		return nil
+	elseif path:lower() == "game" then
+		return game
 	end
 
-	local count = 0
-	local instance = game
+	local instance: Instance
 
-	for name in path:split(".") do
-		count += 1
+	for _, name in path:split(".") do
+		local nextInstanceFound = instance:FindFirstChild(name)
 
-		if name:lower() == "game" and count == 1 then
-			continue
-		end
-
-		local instanceFound = instance:FindFirstChild(name)
-
-		if not instanceFound then
+		if not nextInstanceFound then
 			return nil
 		end
+
+		instance = nextInstanceFound
 	end
 
 	return instance
 end
 
 function Utils.round(number: number, places: number): number
-	places = if places then places else 0
-
+	places = places or 0
 	local power = 10 ^ places
 
 	return math.floor(number * power) / power
 end
 
-function Utils.requireAll(...: BaseScript): ...table
+function Utils.requireAll(...: ModuleScript): ...Types.Table
 	local modules = {}
 
-	for _, path in ipairs({ ... }) do
+	for _, path in { ... } do
+		-- TODO: Resolve
 		local module = require(path)
 
 		table.insert(modules, module)
@@ -344,12 +351,8 @@ function Utils.requireAll(...: BaseScript): ...table
 	return table.unpack(modules)
 end
 
-function Utils.runInStudio(callback: () -> any): nil
-	if RunService:IsStudio() then
-		return
-	end
-
-	callback()
+function Utils.runInStudio<T>(callback: () -> T): T?
+	return if RunService:IsStudio() then callback() else nil
 end
 
 return setmetatable(Utils, UtilsMeta)
