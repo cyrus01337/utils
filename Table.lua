@@ -3,217 +3,207 @@ local Types = require(script.Types)
 
 local Table = {}
 
-
 function Table.pop<T>(iterable: table, key: number | string, fallback: T?): T | any
-    if typeof(key) == "number" then
-        return table.remove(iterable, key)
-    end
+	if typeof(key) == "number" then
+		return table.remove(iterable, key)
+	end
 
-    local ret = iterable[key]
+	local ret = iterable[key]
 
-    if ret == nil then
-        return fallback
-    end
+	if ret == nil then
+		return fallback
+	end
 
-    iterable[key] = nil
+	iterable[key] = nil
 
-    return ret
+	return ret
 end
-
 
 function Table.length(iterable: table): number
-    local count = 0
+	local count = 0
 
-    for _, _ in pairs(iterable) do
-        count += 1
-    end
+	for _, _ in pairs(iterable) do
+		count += 1
+	end
 
-    return count
+	return count
 end
-
 
 function Table.choice(iterable: table, isArray: boolean?): any
-    isArray = if isArray ~= nil then isArray else false
+	isArray = if isArray ~= nil then isArray else false
 
-    if isArray then
-        return iterable[math.random(1, #iterable)]
-    end
+	if isArray then
+		return iterable[math.random(1, #iterable)]
+	end
 
-    local keys = {}
+	local keys = {}
 
-    for key, _ in pairs(iterable) do
-        table.insert(keys, key)
-    end
+	for key, _ in pairs(iterable) do
+		table.insert(keys, key)
+	end
 
-    return keys[math.random(1, #keys)]
+	return keys[math.random(1, #keys)]
 end
 
+function Table.copy<T>(container)
+	local copy = {}
 
-function Table.copy<T>(container: Types.Array<T>): Types.Array<T>
-    local copy = {}
+	for key, value in pairs(container) do
+		if typeof(key) == "number" then
+			table.insert(copy, key, value)
+		else
+			copy[key] = value
+		end
+	end
 
-    for key, value in pairs(container) do
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
+	return copy
 end
 
+function Table.deepcopy<T>(container)
+	local copy = {}
 
-function Table.deepcopy<T>(container: Types.Array<T>): Types.Array<T>
-    local copy = {}
+	for key, value in pairs(container) do
+		if typeof(value) == "table" then
+			value = Table.deepcopy(value)
+		end
 
-    for key, value in pairs(container) do
-        if typeof(value) == "table" then
-            value = Table.deepcopy(value)
-        end
+		if typeof(key) == "number" then
+			table.insert(copy, key, value)
+		else
+			copy[key] = value
+		end
+	end
 
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
+	return copy
 end
-
 
 -- table.create but it actually works and adds n unique values instead of n
 -- references all pointing to the same memory address
-function Table.produce<T>(count: number, value: T): Types.Mapping<number, T>
-    local toUnpack = {}
+function Table.produce<T>(count: number, value: T)
+	local toUnpack = {}
 
-    for _ = 1, count do
-        local processed = value
+	for _ = 1, count do
+		local processed = value
 
-        if typeof(value) == "table" then
-            processed = Table.deepcopy(value)
-        end
+		if typeof(value) == "table" then
+			processed = Table.deepcopy(value)
+		end
 
-        table.insert(toUnpack, processed)
-    end
+		table.insert(toUnpack, processed)
+	end
 
-    return table.unpack(toUnpack)
+	return table.unpack(toUnpack)
 end
 
+function Table.enumerate<K, V>(container, index: number?): () -> (number, K, V)
+	index = if index ~= nil then index else 0
 
-function Table.enumerate<K, V>(container: Types.Mapping<K, V>, index: number?): () -> (number, K, V)
-    index = if index ~= nil then index else 0
+	local key, value
 
-    local key, value;
+	return function(): (number, any, any)
+		index += 1
+		key, value = next(container, key)
 
-    return function(): (number, any, any)
-        index += 1
-        key, value = next(container, key)
+		if value == nil then
+			return value
+		end
 
-        if value == nil then
-            return value
-        end
-
-        return index, key, value
-    end
+		return index, key, value
+	end
 end
 
+function Table.zip<V>(...): () -> ...V
+	local containers = { ... }
+	local nilCount = 0
+	local containersLength = #containers
+	local keys = {}
 
-function Table.zip<V>(...: Types.Array<Types.Mapping<any, V>>): () -> ...V
-    local containers = {...}
-    local nilCount = 0
-    local containersLength = #containers
-    local keys = {}
+	return function()
+		local values = {}
 
-    return function()
-        local values = {}
+		for i = 1, containersLength do
+			local key, value
+			local container = containers[i]
+			local previous = keys[i]
 
-        for i = 1, containersLength do
-            local key, value;
-            local container = containers[i]
-            local previous = keys[i]
+			if typeof(container) == "table" then
+				key, value = next(container, previous)
+			else
+				key, value = container()
 
-            if typeof(container) == "table" then
-                key, value = next(container, previous)
-            else
-                key, value = container()
+				if value == nil then
+					value = key
+					key = nil
+				end
+			end
 
-                if value == nil then
-                    value = key
-                    key = nil
-                end
-            end
+			if value == nil then
+				nilCount += 1
+			else
+				keys[i] = key
 
-            if value == nil then
-                nilCount += 1
-            else
-                keys[i] = key
+				table.insert(values, value)
+			end
+		end
 
-                table.insert(values, value)
-            end
-        end
+		if nilCount == containersLength then
+			return
+		end
 
-        if nilCount == containersLength then return end
-
-        return table.unpack(values)
-    end
+		return table.unpack(values)
+	end
 end
 
+function Table.keys<K>(container, asArray: boolean?): () -> K
+	asArray = asArray or false
+	local key, _
 
-function Table.keys<K>(container: Types.Mapping<K, any>, asArray: boolean?): () -> K
-    asArray = asArray or false
-    local key, _;
+	if asArray then
+		local keys = {}
 
-    if asArray then
-        local keys = {}
+		for key in Table.keys(container) do
+			table.insert(keys, key)
+		end
 
-        for key in Table.keys(container) do
-            table.insert(keys, key)
-        end
+		return keys
+	end
 
-        return keys
-    end
+	return function()
+		key, _ = next(container, key)
 
-    return function()
-        key, _ = next(container, key)
-
-        return key
-    end
+		return key
+	end
 end
 
+function Table.values<V>(container, asArray: boolean?): () -> V
+	asArray = asArray or false
+	local key, value
 
-function Table.values<V>(container: Types.Mapping<any, V>, asArray: boolean?): () -> V
-    asArray = asArray or false
-    local key, value;
+	if asArray then
+		local values = {}
 
-    if asArray then
-        local values = {}
+		for value in Table.values(container) do
+			table.insert(values, value)
+		end
 
-        for value in Table.values(container) do
-            table.insert(values, value)
-        end
+		return values
+	end
 
-        return values
-    end
+	return function()
+		key, value = next(container, key)
 
-    return function()
-        key, value = next(container, key)
-
-        return value
-    end
+		return value
+	end
 end
 
+function Table.extract<K>(container, ...: K): ...K
+	local extracted = {}
 
-function Table.extract<K>(container: Types.Mapping<K, any>, ...: K): ...K
-    local extracted = {}
+	for _, key in ipairs({ ... }) do
+		table.insert(extracted, key)
+	end
 
-    for _, key in ipairs({...}) do
-        table.insert(extracted, key)
-    end
-
-    return table.unpack(extracted)
+	return table.unpack(extracted)
 end
-
 
 return Table

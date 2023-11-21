@@ -5,367 +5,351 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Table = require(script.Table)
-local Types = require(script.Types)
 
 local UtilsMeta = {}
 local Utils = {}
 
-
 function UtilsMeta:__index(key: any): any?
-    return rawget(Utils, key) or Table[key]
+	return rawget(Utils, key) or Table[key]
 end
 
+function Utils.map<K, V>(iterable, callback: () -> V)
+	local ret = {}
 
-function Utils.map<K, V>(iterable: Types.Mapping<K, any>, callback: () -> V): Types.Mapping<K, V>
-    local ret = {}
+	for k, v in pairs(iterable) do
+		ret[k] = callback(v, k, iterable)
+	end
 
-    for k, v in pairs(iterable) do
-        ret[k] = callback(v, k, iterable)
-    end
-
-    return ret
+	return ret
 end
-
 
 function Utils.to(text: string, amount: number): string
-    -- formatting the string prior to concatenation propagates a syntax error
-    local pattern = "%." .. tostring(amount) .. "s"
+	-- formatting the string prior to concatenation propagates a syntax error
+	local pattern = "%." .. tostring(amount) .. "s"
 
-    return string.format(pattern, text)
+	return string.format(pattern, text)
 end
-
 
 function Utils.capitalise(text: string): string
-    local head = string.upper(text:sub(1, 1))
-    local tail = text:sub(2)
+	local head = string.upper(text:sub(1, 1))
+	local tail = text:sub(2)
 
-    return head .. tail:lower()
+	return head .. tail:lower()
 end
-
 
 -- alias only to capitalise on lazy americans loving their shorthands and
 -- convert them into appreciating obvious acts of communism /j
 Utils.capitalize = Utils.capitalise
 
-
 function Utils.timeit(callback: () -> any, iterations: number): nil
-    iterations = if iterations ~= nil then iterations else 10000
+	iterations = if iterations ~= nil then iterations else 10000
 
-    assert(iterations > 0, "Cannot make iterations <= 0")
+	assert(iterations > 0, "Cannot make iterations <= 0")
 
-    local min, max, message;
-    local sum = 0
+	local min, max, message
+	local sum = 0
 
-    for _ = 1, iterations do
-        local start = os.clock()
+	for _ = 1, iterations do
+		local start = os.clock()
 
-        callback()
+		callback()
 
-        local difference = os.clock() - start
-        sum += difference
-        min = if not min or difference < min then difference else min
-        max = if not max or difference > max then difference else max
-    end
+		local difference = os.clock() - start
+		sum += difference
+		min = if not min or difference < min then difference else min
+		max = if not max or difference > max then difference else max
+	end
 
-    local avg = sum / iterations
-    local achievable = 1 / avg
+	local avg = sum / iterations
+	local achievable = 1 / avg
 
-    if achievable < 10 then
-        achievable = Utils.round(achievable, 3)
-    end
+	if achievable < 10 then
+		achievable = Utils.round(achievable, 3)
+	end
 
-    message = (
-        "Results (%d iterations):\n\n" ..
+	message = (
+		"Results (%d iterations):\n\n"
+		.. "Min: %.9fs\n"
+		.. "Max: %.9fs\n"
+		.. "Avg: %.9fs\n"
+		.. "Consistently Achievable: %s/s"
+	)
 
-        "Min: %.9fs\n" ..
-        "Max: %.9fs\n" ..
-        "Avg: %.9fs\n" ..
-        "Consistently Achievable: %s/s"
-    )
-
-    warn(message:format(iterations, min, max, avg, tostring(achievable)))
+	warn(message:format(iterations, min, max, avg, tostring(achievable)))
 end
-
 
 function Utils.strip(text: string): string
-    text = tostring(text)
+	text = tostring(text)
 
-    return text:match(Utils.Constants.STRIP_PATTERN) or text
+	return text:match(Utils.Constants.STRIP_PATTERN) or text
 end
-
 
 function Utils.parent(object: Instance, iterations: number): Instance?
-    -- suppresses and special-cases nil.Parent errors by returning nil
-    local success, ret = pcall(function()
-        for _ = 1, iterations do
-            object = object["Parent"]
-        end
+	-- suppresses and special-cases nil.Parent errors by returning nil
+	local success, ret = pcall(function()
+		for _ = 1, iterations do
+			object = object["Parent"]
+		end
 
-        return object
-    end)
+		return object
+	end)
 
-    ret = if success then ret else nil
+	ret = if success then ret else nil
 
-    return ret
+	return ret
 end
-
 
 function Utils.isIn(value: any, iterable: table): any?
-    for _, element in pairs(iterable) do
-        if element == value then
-            return true
-        end
-    end
+	for _, element in pairs(iterable) do
+		if element == value then
+			return true
+		end
+	end
 
-    return false
+	return false
 end
-
 
 function Utils.isOneOf(instance: Instance, ...: string): boolean
-    for _, className in ipairs({...}) do
-        if instance:IsA(className) then
-            return true
-        end
-    end
+	for _, className in ipairs({ ... }) do
+		if instance:IsA(className) then
+			return true
+		end
+	end
 
-    return false
+	return false
 end
-
 
 function Utils.abbreviate(number: number, decimalPlaces: number?, limit: number?): string
-    decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
-    limit = if limit ~= nil then limit else 999
+	decimalPlaces = if decimalPlaces ~= nil then decimalPlaces else 0
+	limit = if limit ~= nil then limit else 999
 
-    if number > limit then
-        local spliced;
-        -- for grabbing #digits, log10 returns #digits - 1 hence the correction
-        local length = math.floor(math.log10(number)) + 1
-        local index = math.floor(math.abs((length - 1) / 3))
-        local digits = 1 + index * 3
-        local char = Utils.Constants.ABBREVIATIONS[index]
-        local difference = math.abs(length - digits) + 1
-        local initial = number / 10 ^ (length - difference)
+	if number > limit then
+		local spliced
+		-- for grabbing #digits, log10 returns #digits - 1 hence the correction
+		local length = math.floor(math.log10(number)) + 1
+		local index = math.floor(math.abs((length - 1) / 3))
+		local digits = 1 + index * 3
+		local char = Utils.Constants.ABBREVIATIONS[index]
+		local difference = math.abs(length - digits) + 1
+		local initial = number / 10 ^ (length - difference)
 
-        if decimalPlaces <= 0 then
-            spliced = math.floor(initial)
-        else
-            local formatting = "%." .. difference .. "f"
-            spliced = formatting:format(initial)
-        end
+		if decimalPlaces <= 0 then
+			spliced = math.floor(initial)
+		else
+			local formatting = "%." .. difference .. "f"
+			spliced = formatting:format(initial)
+		end
 
-        return spliced .. char
-    end
+		return spliced .. char
+	end
 
-    return tostring(number)
+	return tostring(number)
 end
-
 
 -- https://devforum.roblox.com/t/waitforchild-recursive/17087/13
 function Utils.waitForDescendant(parent: Instance, path: string): Instance
-    local descendant;
+	local descendant
 
-    for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
-        descendant = parent:FindFirstChild(name)
+	for name in path:gmatch("([%w%s!@#;,_/%-'\"]+)%.?") do
+		descendant = parent:FindFirstChild(name)
 
-        if descendant then
-            parent = descendant
+		if descendant then
+			parent = descendant
 
-            continue
-        end
+			continue
+		end
 
-        while not descendant or descendant.Name ~= name do
-            descendant = parent.DescendantAdded:Wait()
-        end
+		while not descendant or descendant.Name ~= name do
+			descendant = parent.DescendantAdded:Wait()
+		end
 
-        parent = descendant
-    end
+		parent = descendant
+	end
 
-    return descendant
+	return descendant
 end
-
 
 function Utils.debounce<T>(callback: () -> any, returning: T?): T | any?
-    local debounce = false
+	local debounce = false
 
-    return function(...)
-        if debounce then return returning end
+	return function(...)
+		if debounce then
+			return returning
+		end
 
-        debounce = true
-        local result = callback(...)
-        debounce = false
+		debounce = true
+		local result = callback(...)
+		debounce = false
 
-        return result
-    end
+		return result
+	end
 end
-
 
 function Utils.debounceTable<T>(callback: () -> any, returning: T?): T | any?
-    local debounces = {}
+	local debounces = {}
 
-    return function(player, ...)
-        if debounces[player] then return returning end
+	return function(player, ...)
+		if debounces[player] then
+			return returning
+		end
 
-        debounces[player] = true
-        local result = callback(player, ...)
-        debounces[player] = false
+		debounces[player] = true
+		local result = callback(player, ...)
+		debounces[player] = false
 
-        return result
-    end
+		return result
+	end
 end
-
 
 function Utils.findPlayerFromAncestor(instance: Instance, recursive: boolean?): Player?
-    recursive = if recursive ~= nil then recursive else false
+	recursive = if recursive ~= nil then recursive else false
 
-    local modelFound;
+	local modelFound
 
-    while not modelFound do
-        modelFound = instance:FindFirstAncestorOfClass("Model")
+	while not modelFound do
+		modelFound = instance:FindFirstAncestorOfClass("Model")
 
-        if not modelFound then break end
+		if not modelFound then
+			break
+		end
 
-        local playerFound = Players:GetPlayerFromCharacter(modelFound)
+		local playerFound = Players:GetPlayerFromCharacter(modelFound)
 
-        if playerFound or not recursive then
-            return playerFound
-        end
+		if playerFound or not recursive then
+			return playerFound
+		end
 
-        instance = modelFound
-    end
+		instance = modelFound
+	end
 
-    return nil
+	return nil
 end
 
+function Utils.playTweenAwait(tween: Tween | Instance, tweenInfo: TweenInfo, properties): nil
+	if not tween:IsA("Tween") then
+		tween = TweenService:Create(tween, tweenInfo, properties)
+	end
 
-function Utils.playTweenAwait(tween: Tween | Instance,
-                              tweenInfo: TweenInfo,
-                              properties: Types.Mapping<string, string>): nil
-    if not tween:IsA("Tween") then
-        tween = TweenService:Create(tween, tweenInfo, properties)
-    end
+	tween:Play()
 
-    tween:Play()
-
-    -- incase the tween completes very quickly and the event fires before the
-    -- script has time to wait for it, this is alternatively used
-    if tween.PlaybackState ~= Enum.PlaybackState.Completed then
-        tween.Completed:Wait()
-    end
+	-- incase the tween completes very quickly and the event fires before the
+	-- script has time to wait for it, this is alternatively used
+	if tween.PlaybackState ~= Enum.PlaybackState.Completed then
+		tween.Completed:Wait()
+	end
 end
 
+function Utils.create(instanceData): Instance
+	local lastKey: string
+	local count = 0
+	local instances = {}
+	local parents = {}
 
-function Utils.create(instanceData: Types.Mapping<string, any>): Instance | Types.Array<Instance>?
-    local lastKey: string;
-    local count = 0
-    local instances = {}
-    local parents = {}
+	for name, properties in pairs(instanceData) do
+		lastKey = name
+		local className = Utils.pop(properties, "ClassName")
+		local parent = Utils.pop(properties, "Parent")
 
-    for name, properties in pairs(instanceData) do
-        lastKey = name
-        local className = Utils.pop(properties, "ClassName")
-        local parent = Utils.pop(properties, "Parent")
+		if not className or typeof(className) ~= "string" then
+			local message = string.format('Skipping %s - invalid ClassName "%s" given', name, tostring(className))
 
-        if not className or typeof(className) ~= "string" then
-            local message = string.format('Skipping %s - invalid ClassName "%s" given', name, tostring(className))
+			warn(message)
+			continue
+		end
 
-            warn(message)
-            continue
-        end
+		local instance = Instance.new(className)
+		instance.Name = if properties.Name then properties.Name else name
 
-        local instance = Instance.new(className)
-              instance.Name = if properties.Name then properties.Name else name
+		for key, value in pairs(properties) do
+			instance[key] = value
+		end
 
-        for key, value in pairs(properties) do
-            instance[key] = value
-        end
+		local parentType = typeof(parent)
 
-        local parentType = typeof(parent)
+		if parent and parentType == "Instance" then
+			instance.Parent = parent
+		elseif parentType == "string" then
+			local parentFound = parents[parent]
 
-        if parent and parentType == "Instance" then
-            instance.Parent = parent
-        elseif parentType == "string" then
-            local parentFound = parents[parent]
+			if parentFound then
+				instance.Parent = parentFound
+			else
+				parents[parent] = instance
+			end
+		end
 
-            if parentFound then
-                instance.Parent = parentFound
-            else
-                parents[parent] = instance
-            end
-        end
+		count += 1
+		instances[name] = instance
+	end
 
-        count += 1
-        instances[name] = instance
-    end
+	for name, instance in pairs(parents) do
+		local parentFound = instances[name]
 
-    for name, instance in pairs(parents) do
-        local parentFound = instances[name]
+		if parentFound then
+			instance.Parent = parentFound
+		end
+	end
 
-        if parentFound then
-            instance.Parent = parentFound
-        end
-    end
+	if count == 1 then
+		instances = instances[lastKey]
+	elseif count == 0 then
+		instances = nil
+	end
 
-    if count == 1 then
-        instances = instances[lastKey]
-    elseif count == 0 then
-        instances = nil
-    end
-
-    return instances
+	return instances
 end
-
 
 function Utils.resolvePath(path: string): Instance?
-    if path == nil then return end
+	if path == nil then
+		return
+	end
 
-    local count = 0
-    local instance = game
+	local count = 0
+	local instance = game
 
-    for name in path:split(".") do
-        count += 1
+	for name in path:split(".") do
+		count += 1
 
-        if name:lower() == "game" and count == 1 then
-            continue
-        end
+		if name:lower() == "game" and count == 1 then
+			continue
+		end
 
-        local instanceFound = instance:FindFirstChild(name)
+		local instanceFound = instance:FindFirstChild(name)
 
-        if not instanceFound then
-            return nil
-        end
-    end
+		if not instanceFound then
+			return nil
+		end
+	end
 
-    return instance
+	return instance
 end
-
 
 function Utils.round(number: number, places: number): number
-    places = if places then places else 0
+	places = if places then places else 0
 
-    local power = 10 ^ places
+	local power = 10 ^ places
 
-    return math.floor(number * power) / power
+	return math.floor(number * power) / power
 end
-
 
 function Utils.requireAll(...: BaseScript): ...table
-    local modules = {}
+	local modules = {}
 
-    for _, path in ipairs({...}) do
-        local module = require(path)
+	for _, path in ipairs({ ... }) do
+		local module = require(path)
 
-        table.insert(modules, module)
-    end
+		table.insert(modules, module)
+	end
 
-    return table.unpack(modules)
+	return table.unpack(modules)
 end
-
 
 function Utils.runInStudio(callback: () -> any): nil
-    if RunService:IsStudio() then return end
+	if RunService:IsStudio() then
+		return
+	end
 
-    callback()
+	callback()
 end
-
 
 return setmetatable(Utils, UtilsMeta)
