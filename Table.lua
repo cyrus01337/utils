@@ -1,32 +1,30 @@
 --!strict
+local Types = require(script.Parent.Types)
+
 local Table = {}
 
-type Record<K = string, V = any> = { [K]: V }
-type Array<T = any> = { [number]: T }
-type Table = Record | Array
-
-local function isArrayOptimistic(container: Table): boolean
+local function isArrayOptimistic(container: Types.Table): boolean
 	local firstKey = next(container)
 
 	return typeof(firstKey) == "number"
 end
 
-function Table.pop<T>(container: Array<T> | Record<any, T>, key: any, fallback: T?): T?
+function Types.Table.pop<T>(container: Types.Array<T> | Types.Record<any, T>, key: any, fallback: T?): T?
 	if isArrayOptimistic(container) then
-		local asArray = container :: Array<T>
+		local asArray = container :: Types.Array<T>
 		local popped = table.remove(asArray, key)
 
 		return if popped ~= nil then popped else fallback
 	end
 
-	local asDict = container :: Record<string, T>
+	local asDict = container :: Types.Record<string, T>
 	local popped = asDict[key]
 	asDict[key] = nil
 
 	return if popped ~= nil then popped else fallback
 end
 
-function Table.length(container: Table): number
+function Types.Table.length(container: Types.Table): number
 	local count = #container
 
 	if count > 0 then
@@ -43,15 +41,15 @@ function Table.length(container: Table): number
 	return count
 end
 
-function Table.choice<T>(container: Array<T> | Record<any, T>): T
+function Types.Table.choice<T>(container: Types.Array<T> | Types.Record<any, T>): T
 	if isArrayOptimistic(container) then
-		local asArray = container :: Array
+		local asArray = container :: Types.Array
 		local randomIndex = math.random(1, #container)
 
 		return asArray[randomIndex]
 	end
 
-	local asDict = container :: Record
+	local asDict = container :: Types.Record
 	local keys = {}
 
 	for key, _ in asDict do
@@ -63,7 +61,7 @@ function Table.choice<T>(container: Array<T> | Record<any, T>): T
 	return asDict[randomKey]
 end
 
-function Table.copy<K, V>(container: Array<K> | Record<K, V>): Array<K> | Record<K, V>
+function Types.Table.copy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types.Array<K> | Types.Record<K, V>
 	local copy = {}
 
 	-- TODO: Resolve type error
@@ -78,13 +76,13 @@ function Table.copy<K, V>(container: Array<K> | Record<K, V>): Array<K> | Record
 	return copy
 end
 
-function Table.deepCopy<K, V>(container: Array<K> | Record<K, V>): Array<K> | Record<K, V>
+function Types.Table.deepCopy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types.Array<K> | Types.Record<K, V>
 	local copy = {}
 
 	-- TODO: Resolve type error
 	for key, value in container do
 		if typeof(value) == "table" then
-			value = Table.deepCopy(value)
+			value = Types.Table.deepCopy(value)
 		end
 
 		if typeof(key) == "number" then
@@ -100,15 +98,15 @@ end
 -- TODO: Revise
 -- table.create but it actually works and adds n unique values instead of n
 -- references all pointing to the same memory address
-function Table.produce<T>(count: number, value: T): Array<T>
-	local toUnpack: Array<T> = {}
+function Types.Table.produce<T>(count: number, value: T): Types.Array<T>
+	local toUnpack: Types.Array<T> = {}
 
 	for _ = 1, count do
-		local processed = if typeof(value) ~= "table" then value else Table.deepCopy(value)
+		local processed = if typeof(value) ~= "table" then value else Types.Table.deepCopy(value)
 
 		-- TODO: Silence type error
 		-- Because generic functions aren't completely developed, I can't pass
-		-- in the types needed for Table.deepCopy to receive and use within it's
+		-- in the types needed for Types.Table.deepCopy to receive and use within it's
 		-- scope, causing all generics to be never
 		table.insert(toUnpack, processed)
 	end
@@ -116,7 +114,7 @@ function Table.produce<T>(count: number, value: T): Array<T>
 	return toUnpack
 end
 
-function Table.enumerate<K, V>(container: Table, index: number?): () -> (number, K, V)
+function Types.Table.enumerate<K, V>(container: Types.Table, index: number?): () -> (number, K, V)
 	local enumeration = index or 0
 
 	local key: K
@@ -142,7 +140,7 @@ function Table.enumerate<K, V>(container: Table, index: number?): () -> (number,
 	end
 end
 
-function Table.zip<V>(...: Table): () -> ...V
+function Types.Table.zip<V>(...: Types.Table): () -> ...V
 	local containers = { ... }
 	local nilCount = 0
 	local containersLength = #containers
@@ -178,7 +176,7 @@ function Table.zip<V>(...: Table): () -> ...V
 	end
 end
 
-function Table.keys<K>(container: Table): () -> K
+function Types.Table.keys<K>(container: Types.Table): () -> K
 	local key: K
 	local nextKey: K?
 	local firstRun = true
@@ -209,7 +207,7 @@ function Table.keys<K>(container: Table): () -> K
 	end
 end
 
-function Table.values<V>(container): () -> V
+function Types.Table.values<V>(container): () -> V
 	local value: V
 	local nextKey: any
 	local nextValue: V?
@@ -239,4 +237,4 @@ function Table.values<V>(container): () -> V
 	end
 end
 
-return Table
+return Types.Table
