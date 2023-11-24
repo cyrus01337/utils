@@ -29,11 +29,7 @@ function Table.length(container: Types.Table): number
 
     local count = 0
 
-<<<<<<< HEAD
-    for _, _ in container :: Types.Record do
-=======
     for _, _ in container do
->>>>>>> b78c88b (Refine types)
         count += 1
     end
 
@@ -120,11 +116,7 @@ function Table.enumerate<K, V>(container: Types.Table<V, K>, index: number?): ()
         enumeration += 1
         key, value = next(container, key)
 
-<<<<<<< HEAD
-        if nextKey == nil and nextValue == nil then
-=======
         if key == nil and value == nil then
->>>>>>> b78c88b (Refine types)
             return nil
         end
 
