@@ -9,62 +9,54 @@ local function isArrayOptimistic(container: Types.Table): boolean
     return typeof(firstKey) == "number"
 end
 
-function Table.pop<T>(container: Types.Array<T> | Types.Record<any, T>, key: any, fallback: T?): T?
+function Table.pop<T>(container: Types.Table<T>, key: any, fallback: T?): T?
     if isArrayOptimistic(container) then
-        local asArray = container :: Types.Array<T>
-        local popped = table.remove(asArray, key)
+        local popped = table.remove(container, key)
 
         return if popped ~= nil then popped else fallback
     end
 
-    local asDict = container :: Types.Record<string, T>
-    local popped = asDict[key]
-    asDict[key] = nil
+    local popped = container[key]
+    container[key] = nil
 
     return if popped ~= nil then popped else fallback
 end
 
 function Table.length(container: Types.Table): number
-    local count = #container
-
-    if count > 0 then
-        return count
+    if isArrayOptimistic(container) then
+        return #container
     end
 
-    count = 0
+    local count = 0
 
-    -- TODO: Resolve type error
-    for _, _ in container do
+    for _, _ in container :: Types.Record do
         count += 1
     end
 
     return count
 end
 
-function Table.choice<T>(container: Types.Array<T> | Types.Record<any, T>): T
+function Table.choice<T>(container: Types.Table<T>): T
     if isArrayOptimistic(container) then
-        local asArray = container :: Types.Array
         local randomIndex = math.random(1, #container)
 
-        return asArray[randomIndex]
+        return container[randomIndex]
     end
 
-    local asDict = container :: Types.Record
     local keys = {}
 
-    for key, _ in asDict do
+    for key, _ in container do
         table.insert(keys, key)
     end
 
     local randomKey = keys[math.random(1, #keys)]
 
-    return asDict[randomKey]
+    return container[randomKey]
 end
 
-function Table.copy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types.Array<K> | Types.Record<K, V>
+function Table.copy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
     local copy = {}
 
-    -- TODO: Resolve type error
     for key, value in container do
         if typeof(key) == "number" then
             table.insert(copy, key, value)
@@ -76,12 +68,12 @@ function Table.copy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types
     return copy
 end
 
-function Table.deepCopy<K, V>(container: Types.Array<K> | Types.Record<K, V>): Types.Array<K> | Types.Record<K, V>
+function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
     local copy = {}
 
-    -- TODO: Resolve type error
     for key, value in container do
         if typeof(value) == "table" then
+            -- TODO: Resolve/Ignore type error
             value = Table.deepCopy(value)
         end
 
@@ -114,7 +106,7 @@ function Table.produce<T>(count: number, value: T): Types.Array<T>
     return toUnpack
 end
 
-function Table.enumerate<K, V>(container: Types.Table, index: number?): () -> (number, K, V)
+function Table.enumerate<K, V>(container: Types.Table<V, K>, index: number?): () -> (number?, K?, V?)
     local enumeration = index or 0
 
     local key: K
@@ -127,9 +119,6 @@ function Table.enumerate<K, V>(container: Types.Table, index: number?): () -> (n
         nextKey, nextValue = next(container, key)
 
         if nextKey == nil and nextValue == nil then
-            -- TODO: Silence type error
-            -- If an iterator returns the single value nil, it implicitly stops
-            -- the iteration
             return nil
         end
 
@@ -140,7 +129,7 @@ function Table.enumerate<K, V>(container: Types.Table, index: number?): () -> (n
     end
 end
 
-function Table.zip<V>(...: Types.Table): () -> ...V
+function Table.zip<K, V>(...: Types.Table<V, K>): () -> V?
     local containers = { ... }
     local nilCount = 0
     local containersLength = #containers
@@ -169,14 +158,14 @@ function Table.zip<V>(...: Types.Table): () -> ...V
 
         -- TODO: Revise
         if nilCount == containersLength then
-            return
+            return nil
         end
 
         return table.unpack(values)
     end
 end
 
-function Table.keys<K>(container: Types.Table): () -> K
+function Table.keys<K>(container: Types.Table<any, K>): () -> K?
     local key: K
     local nextKey: K?
     local firstRun = true
@@ -207,7 +196,7 @@ function Table.keys<K>(container: Types.Table): () -> K
     end
 end
 
-function Table.values<V>(container: Types.Table): () -> V
+function Table.values<V>(container: Types.Table): () -> V?
     local value: V
     local nextKey: any
     local nextValue: V?
