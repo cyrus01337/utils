@@ -1,7 +1,9 @@
 --!strict
 local Types = require(script.Parent.Types)
 
-local Table = {}
+local Table = {
+    copy = table.clone,
+}
 
 local function isArrayOptimistic(container: Types.Table): boolean
     local firstKey = next(container)
@@ -52,20 +54,6 @@ function Table.choice<T>(container: Types.Table<T>): T
     local randomKey = keys[math.random(1, #keys)]
 
     return container[randomKey]
-end
-
-function Table.copy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
-    local copy = {}
-
-    for key, value in container do
-        if typeof(key) == "number" then
-            table.insert(copy, key, value)
-        else
-            copy[key] = value
-        end
-    end
-
-    return copy
 end
 
 function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
