@@ -132,37 +132,60 @@ function Table.enumerate<K, V>(container: Types.Table<V, K>, index: number?): ()
     end
 end
 
-function Table.zip<K, V>(...: Types.Table<V, K>): () -> V?
+-- TODO: Consider inferring types from tables passed in
+function Table.zip<K, V>(...: Types.Table<V, K>): () -> any
     local containers = { ... }
-    local nilCount = 0
-    local containersLength = #containers
-    local keys = {}
+    local containerCount = #containers
+    local previousKeysPerIteration: Types.Array<Types.Array<K?>> = {}
+    local iterations = 0
+    local largestContainerLength = 0
+
+    -- When dealing with a table that utilises nil, iterating via next causes an
+    -- odd side-effect where the next key retrieved becomes the first value (or
+    -- at least that was the case in my testing). We avoid this by optimistically
+    -- retrieving the size of the largest container that is an array, then use
+    -- the size as a reference to gate the number of legal iterations and avoid
+    -- the loopback
+    for _, container in containers do
+        local containerLength = #container
+
+        if largestContainerLength >= containerLength then
+            continue
+        end
+
+        largestContainerLength = containerLength
+    end
 
     return function()
-        local key: any
-        local value: V
-        local nextValue: V?
-        local values = {}
+        local values: Types.Array = {}
+        local nextIteration = iterations + 1
+        local previousKeys: Types.Array<K?> = previousKeysPerIteration[iterations] or {}
+        local nextKeys: Types.Array<K?> = previousKeysPerIteration[nextIteration] or {}
+        local nilCount = 0
 
-        for i = 1, containersLength do
-            local container = containers[i]
-            local previous = keys[i]
-            key, nextValue = next(container, previous)
-
-            if nextValue == nil then
-                nilCount += 1
-            else
-                keys[i] = key
-                value = nextValue
-
-                table.insert(values, value)
-            end
-        end
-
-        -- TODO: Revise
-        if nilCount == containersLength then
+        if iterations == largestContainerLength then
             return nil
         end
+
+        for index, container in containers do
+            local previousKey = previousKeys[index]
+            local key, value = next(container, previousKey)
+
+            if key == nil and value == nil then
+                nilCount += 1
+            end
+
+            table.insert(nextKeys, key)
+            table.insert(values, value)
+        end
+
+        if nilCount == containerCount then
+            return nil
+        end
+
+        table.insert(previousKeysPerIteration, nextIteration, nextKeys)
+
+        iterations += 1
 
         return table.unpack(values)
     end
