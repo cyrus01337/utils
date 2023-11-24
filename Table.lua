@@ -207,7 +207,7 @@ function Table.keys<K>(container: Types.Table): () -> K
     end
 end
 
-function Table.values<V>(container): () -> V
+function Table.values<V>(container: Types.Table): () -> V
     local value: V
     local nextKey: any
     local nextValue: V?
