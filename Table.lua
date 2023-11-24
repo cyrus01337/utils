@@ -229,4 +229,20 @@ function Table.values<V>(container: Types.Table): () -> V?
     end
 end
 
+type FilterCallback<T> = (element: T) -> boolean
+
+function Table.filter<T>(container: Types.Array<T>, filter: FilterCallback<T>): Types.Array<T>
+    local newContainer: Types.Array<T> = {}
+
+    for _, element in container do
+        if not filter(element) then
+            continue
+        end
+
+        table.insert(newContainer, element)
+    end
+
+    return newContainer
+end
+
 return Table
