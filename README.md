@@ -7,6 +7,7 @@ Everything here is organised by branches and named by language, expect utilities
 ## Supported Languages
 - [JavaScript](https://github.com/cyrus01337/utils/tree/javascript)
 - [Luau](https://github.com/cyrus01337/utils/tree/luau)
+- [Python](https://github.com/cyrus01337/utils/tree/python)
 
 ## Licensing
 You are free to do as you wish with what is provided here. I do not deem myself to be the greatest programmer nor will I assume that anything provided here to be helpful to anyone but myself, so feel free to use/modify/claim these as you wish.
