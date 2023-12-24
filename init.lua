@@ -189,7 +189,7 @@ function Utils.debounce<T>(callback: (...any) -> T, returning: T?): (...any) -> 
     end
 end
 
-function Utils.debounceTypes.Table<T>(callback: (...any) -> T, returning: T?): (...any) -> T?
+function Utils.debounceTable<T>(callback: (...any) -> T, returning: T?): (...any) -> T?
     local runningCallbackTracker: Types.Record<Player, boolean> = {}
 
     return function(player, ...)
