@@ -275,7 +275,8 @@ function Utils.requireAll(...: ModuleScript): ...Types.Table
 	local modules = {}
 
 	for _, path in { ... } do
-		-- TODO: Resolve
+		-- https://devforum.roblox.com/t/type-checking-warning-unknow-require-unsupported-path/1539070/18
+		local require = require
 		local module = require(path)
 
 		table.insert(modules, module)
