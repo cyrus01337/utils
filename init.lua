@@ -12,13 +12,9 @@ local Utils = {
 	Table = Table,
 }
 
-function Utils.map<K, V>(
-	iterable: Types.Array<K> | Types.Record<K, V>,
-	callback: (V, K, Types.Array<K> | Types.Record<K, V>) -> any
-): Types.Array<V>
-	local mapped: Types.Array<V> = {}
+function Utils.map<K, V, R>(iterable: Types.Table<V, K>, callback: (V, K, Types.Table<V, K>) -> R): Types.Array<R>
+	local mapped: Types.Array<R> = {}
 
-	-- TODO: Resolve type error
 	for key, value in iterable do
 		local result = callback(value, key, iterable)
 
