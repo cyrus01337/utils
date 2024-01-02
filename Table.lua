@@ -1,4 +1,3 @@
---!strict
 --!nolint LocalShadow
 local Types = require(script.Parent.Types)
 
@@ -58,7 +57,7 @@ function Table.choice<T>(container: Types.Table<T>): T
 end
 
 function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
-	local copy = {}
+	local copy: Types.Table<V, K> = {}
 
 	for key, value in container do
 		if typeof(value) == "table" then
@@ -68,11 +67,7 @@ function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
 			value = Table.deepCopy(value)
 		end
 
-		if typeof(key) == "number" then
-			table.insert(copy, key, value)
-		else
-			copy[key] = value
-		end
+		copy[key] = value
 	end
 
 	return copy
@@ -108,6 +103,8 @@ function Table.enumerate<K, V>(container: Types.Table<V, K>, start: number?)
 		if nextKey ~= nil and nextValue ~= nil then
 			return enumeration, nextKey, nextValue
 		end
+
+		return nil
 	end
 end
 
