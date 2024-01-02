@@ -78,9 +78,9 @@ function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
 	return copy
 end
 
--- table.create but it adds n unique values instead of n references all pointing
--- to the same memory address
 function Table.produce<T>(count: number, value: T): Types.Array<T>
+	-- table.create but it adds n unique values instead of n references of the
+	-- same value
 	local product = {}
 
 	for _ = 1, count do
@@ -96,141 +96,62 @@ function Table.produce<T>(count: number, value: T): Types.Array<T>
 	return product
 end
 
-function Table.enumerate<K, V>(container: Types.Table<V, K>, index: number?): () -> (number?, K?, V?)
-	local enumeration = index or 0
-
-	local key: K?
-	local value: V?
+function Table.enumerate<K, V>(container: Types.Table<V, K>, start: number?)
+	local key = nil
+	local enumeration = start or 0
 
 	return function()
+		local nextKey, nextValue = next(container, key)
+		key = nextKey
 		enumeration += 1
-		key, value = next(container, key)
 
-		if key == nil and value == nil then
-			return nil
+		if nextKey ~= nil and nextValue ~= nil then
+			return enumeration, nextKey, nextValue
 		end
-
-		return enumeration, key, value
 	end
 end
 
--- TODO: Consider inferring types from tables passed in
-function Table.zip<K, V>(...: Types.Table<V, K>): () -> any
+function Table.zip<T>(...: Types.Table)
 	local containers = { ... }
-	local containerCount = #containers
-	local previousKeysPerIteration: Types.Array<Types.Array<K?>> = {}
-	local iterations = 0
-	local largestContainerLength = 0
-
-	-- When dealing with a table that utilises nil, iterating via next causes an
-	-- odd side-effect where the next key retrieved becomes the first value (or
-	-- at least that was the case in my testing). We avoid this by optimistically
-	-- retrieving the size of the largest container that is an array, then use
-	-- the size as a reference to gate the number of legal iterations and avoid
-	-- the loopback
-	for _, container in containers do
-		local containerLength = #container
-
-		if largestContainerLength >= containerLength then
-			continue
-		end
-
-		largestContainerLength = containerLength
-	end
+	local totalContainers = #containers
+	local index = 0
+	local keys = {}
 
 	return function()
-		local values: Types.Array = {}
-		local nextIteration = iterations + 1
-		local previousKeys: Types.Array<K?> = previousKeysPerIteration[iterations] or {}
-		local nextKeys: Types.Array<K?> = previousKeysPerIteration[nextIteration] or {}
-		local nilCount = 0
+		local values = {}
+		index += 1
 
-		if iterations == largestContainerLength then
-			return nil
+		for i = 1, totalContainers do
+			local container = containers[i]
+			local key = keys[i]
+			local nextKey, nextValue = next(container, key)
+			keys[i] = nextKey
+
+			table.insert(values, nextValue)
 		end
-
-		for index, container in containers do
-			local previousKey = previousKeys[index]
-			local key, value = next(container, previousKey)
-
-			if key == nil and value == nil then
-				nilCount += 1
-			end
-
-			table.insert(nextKeys, key)
-			table.insert(values, value)
-		end
-
-		if nilCount == containerCount then
-			return nil
-		end
-
-		table.insert(previousKeysPerIteration, nextIteration, nextKeys)
-
-		iterations += 1
 
 		return table.unpack(values)
 	end
 end
 
-function Table.keys<K>(container: Types.Table<any, K>): () -> K?
-	local key: K
-	local nextKey: K?
-	local firstRun = true
+local function keys<T>(container: Types.Table<any, T>, key: T?)
+	local nextKey: T? = next(container, key)
 
-	-- TODO: Revise
-	return function()
-		-- Have to do it this way or linter bullies me
-		if firstRun then
-			firstRun = false
-			nextKey = next(container)
-
-			if nextKey == nil then
-				return nil
-			end
-
-			key = nextKey
-		else
-			nextKey = next(container, key)
-
-			if nextKey == nil then
-				return nil
-			end
-
-			key = nextKey
-		end
-
-		return key
-	end
+	return nextKey
 end
 
-function Table.values<V>(container: Types.Table): () -> V?
-	local value: V
-	local nextKey: any
-	local nextValue: V?
-	local firstRun = true
+function Table.keys<T>(container: Types.Table<any, T>)
+	return keys, container, nil
+end
+
+function Table.values<T>(container: Types.Table<T>)
+	local key = nil
 
 	return function()
-		if firstRun then
-			firstRun = false
-			nextKey, nextValue = next(container)
+		local nextKey, nextValue = next(container, key)
+		key = nextKey
 
-			if nextKey == nil and nextValue == nil then
-				return nil
-			end
-
-			value = nextValue
-		else
-			nextKey, nextValue = next(container, nextKey)
-
-			if nextKey == nil and nextValue == nil then
-				return nil
-			end
-
-			value = nextValue
-		end
-
-		return value
+		return nextValue
 	end
 end
 
