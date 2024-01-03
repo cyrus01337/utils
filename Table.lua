@@ -1,3 +1,4 @@
+--!strict
 --!nolint LocalShadow
 local Types = require(script.Parent.Types)
 
@@ -104,7 +105,7 @@ function Table.enumerate<K, V>(container: Types.Table<V, K>, start: number?)
 			return enumeration, nextKey, nextValue
 		end
 
-		return nil
+		return
 	end
 end
 
