@@ -13,8 +13,8 @@ local Types = {
 	Array = ArrayLiteral,
 }
 
-function Types.cast<T>(from: any, _: T): T
-	return from
+function Types.unsafeForceCast<T, O>(value: T): O
+	return (value :: any) :: O
 end
 
 return Types
