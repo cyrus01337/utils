@@ -12,7 +12,7 @@ local function isArrayOptimistic(container: Types.Table): boolean
     return typeof(firstKey) == "number"
 end
 
-function Table.pop<T>(container: Types.Table<T>, key: any, fallback: T?): T?
+function Table.pop<Value>(container: Types.Table<Value>, key: any, fallback: Value?): Value?
     if isArrayOptimistic(container) then
         local popped = table.remove(container, key)
 
@@ -39,7 +39,7 @@ function Table.length(container: Types.Table): number
     return count
 end
 
-function Table.choice<T>(container: Types.Table<T>): T
+function Table.choice<Value>(container: Types.Table<Value>): Value
     if isArrayOptimistic(container) then
         local randomIndex = math.random(1, #container)
 
@@ -57,8 +57,8 @@ function Table.choice<T>(container: Types.Table<T>): T
     return container[randomKey]
 end
 
-function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
-    local copy: Types.Table<V, K> = {}
+function Table.deepCopy<Key, Value>(container: Types.Table<Value, Key>): Types.Table<Value, Key>
+    local copy: Types.Table<Value, Key> = {}
 
     for key, value in container do
         if typeof(value) == "table" then
@@ -74,7 +74,7 @@ function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
     return copy
 end
 
-function Table.produce<T>(count: number, value: T): Types.Array<T>
+function Table.produce<Value>(count: number, value: Value): Types.Array<Value>
     -- table.create but it adds n unique values instead of n references of the
     -- same value
     local product = {}
@@ -92,7 +92,7 @@ function Table.produce<T>(count: number, value: T): Types.Array<T>
     return product
 end
 
-function Table.enumerate<K, V>(container: Types.Table<V, K>, start: number?)
+function Table.enumerate<Key, Value>(container: Types.Table<Value, Key>, start: number?)
     local key = nil
     local enumeration = start or 0
 
@@ -109,6 +109,7 @@ function Table.enumerate<K, V>(container: Types.Table<V, K>, start: number?)
     end
 end
 
+-- TODO: Use generic
 function Table.zip<T>(...: Types.Table)
     local containers = { ... }
     local totalContainers = #containers
@@ -132,17 +133,17 @@ function Table.zip<T>(...: Types.Table)
     end
 end
 
-local function keys<T>(container: Types.Table<any, T>, key: T?)
-    local nextKey: T? = next(container, key)
+local function keys<Type>(container: Types.Table<any, Type>, key: Type?)
+    local nextKey: Type? = next(container, key)
 
     return nextKey
 end
 
-function Table.keys<T>(container: Types.Table<any, T>)
+function Table.keys<Type>(container: Types.Table<any, Type>)
     return keys, container, nil
 end
 
-function Table.values<T>(container: Types.Table<T>)
+function Table.values<Type>(container: Types.Table<Type>)
     local key = nil
 
     return function()
@@ -153,10 +154,10 @@ function Table.values<T>(container: Types.Table<T>)
     end
 end
 
-type FilterCallback<T> = (element: T) -> boolean
+type FilterCallback<Value> = (element: Value) -> boolean
 
-function Table.filter<T>(container: Types.Array<T>, filter: FilterCallback<T>): Types.Array<T>
-    local newContainer: Types.Array<T> = {}
+function Table.filter<Value>(container: Types.Array<Value>, filter: FilterCallback<Value>): Types.Array<Value>
+    local newContainer: Types.Array<Value> = {}
 
     for _, element in container do
         if not filter(element) then
@@ -169,7 +170,7 @@ function Table.filter<T>(container: Types.Array<T>, filter: FilterCallback<T>): 
     return newContainer
 end
 
-function Table.defaults<T, From>(properties: From & Types.Table, defaults: T & Types.Table): T | Types.Table
+function Table.defaults<To, From>(properties: From & Types.Table, defaults: To & Types.Table): To | Types.Table
     local filled = {}
 
     for key, value in defaults :: Types.Table do

@@ -6,15 +6,15 @@ local TableLiteral: Table = {}
 local RecordLiteral: Record = {}
 local ArrayLiteral: Array = {}
 local Types = {
-	Number = 0,
-	String = "",
-	Table = TableLiteral,
-	Record = RecordLiteral,
-	Array = ArrayLiteral,
+    Number = 0,
+    String = "",
+    Table = TableLiteral,
+    Record = RecordLiteral,
+    Array = ArrayLiteral,
 }
 
-function Types.unsafeForceCast<T, O>(value: T): O
-	return (value :: any) :: O
+function Types.unsafeForceCast<From, To>(value: From): To
+    return (value :: any) :: To
 end
 
 return Types
