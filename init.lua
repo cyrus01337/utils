@@ -170,35 +170,86 @@ function Utils.waitForDescendant(parent: Instance, name: string): Instance
     end
 end
 
-function Utils.debounce<ReturnType>(callback: (...any) -> ReturnType, returning: ReturnType?): (...any) -> ReturnType?
+type DebounceProperties<ReturnType> = {
+    Numerical: boolean?,
+    Returning: ReturnType?,
+}
+
+function Utils.debounce<ReturnType>(
+    callback: (...any) -> ReturnType,
+    properties: DebounceProperties<ReturnType>?
+): (...any) -> ReturnType?
+    local castedProperties: DebounceProperties<ReturnType> = Table.defaults(properties or {}, {
+        Numerical = false,
+        Returning = nil,
+    })
     local runningCallback = false
+    local invocations = 0
 
     return function(...)
-        if runningCallback then
-            return returning
+        if not castedProperties.Numerical and runningCallback or castedProperties.Numerical and invocations > 1 then
+            return castedProperties.Returning
         end
 
-        runningCallback = true
+        if not castedProperties.Numerical then
+            runningCallback = true
+        else
+            invocations += 1
+        end
+
         local result = callback(...)
-        runningCallback = false
+
+        if not castedProperties.Numerical then
+            runningCallback = false
+        else
+            invocations = 0
+        end
 
         return result
     end
 end
 
-function Utils.debounceTable<ReturnType>(callback: (...any) -> ReturnType, returning: ReturnType?): (...any) -> ReturnType?
+function Utils.debounceTable<ReturnType>(
+    callback: (...any) -> ReturnType,
+    properties: DebounceProperties<ReturnType>?
+): (...any) -> ReturnType?
+    local castedProperties: DebounceProperties<ReturnType> = Table.defaults(properties or {}, {
+        Numerical = false,
+        Returning = nil,
+    })
     local runningCallbackTracker: Types.Record<Player, boolean> = {}
+    local playerInvocationsTracker: Types.Record<Player, number> = {}
 
     return function(player, ...)
+        runningCallbackTracker[player] = if runningCallbackTracker[player] ~= nil
+            then runningCallbackTracker[player]
+            else false
+        playerInvocationsTracker[player] = if playerInvocationsTracker[player] ~= nil
+            then playerInvocationsTracker[player]
+            else 0
         local runningCallback = runningCallbackTracker[player]
+        local playerInvocations = playerInvocationsTracker[player]
 
-        if runningCallback then
-            return returning
+        if
+            not castedProperties.Numerical and runningCallback
+            or castedProperties.Numerical and playerInvocations > 1
+        then
+            return castedProperties.Returning
         end
 
-        runningCallbackTracker[player] = true
+        if not castedProperties.Numerical then
+            runningCallbackTracker[player] = true
+        else
+            playerInvocationsTracker[player] += 1
+        end
+
         local result = callback(player, ...)
-        runningCallbackTracker[player] = false
+
+        if not castedProperties.Numerical then
+            runningCallbackTracker[player] = false
+        else
+            playerInvocationsTracker[player] = 0
+        end
 
         return result
     end
