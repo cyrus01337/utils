@@ -92,11 +92,15 @@ function Table.produce<Value>(count: number, value: Value): Types.Array<Value>
     return product
 end
 
+local function iterationEnded(): ...any
+    return nil
+end
+
 function Table.enumerate<Key, Value>(container: Types.Table<Value, Key>, start: number?)
     local key = nil
     local enumeration = start or 0
 
-    return function()
+    return function(): (number?, Key, Value)
         local nextKey, nextValue = next(container, key)
         key = nextKey
         enumeration += 1
@@ -105,7 +109,7 @@ function Table.enumerate<Key, Value>(container: Types.Table<Value, Key>, start: 
             return enumeration, nextKey, nextValue
         end
 
-        return
+        return iterationEnded()
     end
 end
 
