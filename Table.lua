@@ -3,170 +3,181 @@
 local Types = require(script.Parent.Types)
 
 local Table = {
-	copy = table.clone,
+    copy = table.clone,
 }
 
 local function isArrayOptimistic(container: Types.Table): boolean
-	local firstKey = next(container)
+    local firstKey = next(container)
 
-	return typeof(firstKey) == "number"
+    return typeof(firstKey) == "number"
 end
 
 function Table.pop<T>(container: Types.Table<T>, key: any, fallback: T?): T?
-	if isArrayOptimistic(container) then
-		local popped = table.remove(container, key)
+    if isArrayOptimistic(container) then
+        local popped = table.remove(container, key)
 
-		return if popped ~= nil then popped else fallback
-	end
+        return if popped ~= nil then popped else fallback
+    end
 
-	local popped = container[key]
-	container[key] = nil
+    local popped = container[key]
+    container[key] = nil
 
-	return if popped ~= nil then popped else fallback
+    return if popped ~= nil then popped else fallback
 end
 
 function Table.length(container: Types.Table): number
-	if isArrayOptimistic(container) then
-		return #container
-	end
+    if isArrayOptimistic(container) then
+        return #container
+    end
 
-	local count = 0
+    local count = 0
 
-	for _, _ in container do
-		count += 1
-	end
+    for _, _ in container do
+        count += 1
+    end
 
-	return count
+    return count
 end
 
 function Table.choice<T>(container: Types.Table<T>): T
-	if isArrayOptimistic(container) then
-		local randomIndex = math.random(1, #container)
+    if isArrayOptimistic(container) then
+        local randomIndex = math.random(1, #container)
 
-		return container[randomIndex]
-	end
+        return container[randomIndex]
+    end
 
-	local keys = {}
+    local keys = {}
 
-	for key, _ in container do
-		table.insert(keys, key)
-	end
+    for key, _ in container do
+        table.insert(keys, key)
+    end
 
-	local randomKey = keys[math.random(1, #keys)]
+    local randomKey = keys[math.random(1, #keys)]
 
-	return container[randomKey]
+    return container[randomKey]
 end
 
 function Table.deepCopy<K, V>(container: Types.Table<V, K>): Types.Table<V, K>
-	local copy: Types.Table<V, K> = {}
+    local copy: Types.Table<V, K> = {}
 
-	for key, value in container do
-		if typeof(value) == "table" then
-			-- must convert to table to label value as an iterable
-			local value: Types.Table = value
+    for key, value in container do
+        if typeof(value) == "table" then
+            -- must convert to table to label value as an iterable
+            local value: Types.Table = value
 
-			value = Table.deepCopy(value)
-		end
+            value = Table.deepCopy(value)
+        end
 
-		copy[key] = value
-	end
+        copy[key] = value
+    end
 
-	return copy
+    return copy
 end
 
 function Table.produce<T>(count: number, value: T): Types.Array<T>
-	-- table.create but it adds n unique values instead of n references of the
-	-- same value
-	local product = {}
+    -- table.create but it adds n unique values instead of n references of the
+    -- same value
+    local product = {}
 
-	for _ = 1, count do
-		if typeof(value) == "table" then
-			-- must convert to table to label value as an iterable
-			local value: Types.Record = value
-			value = Table.deepCopy(value)
-		end
+    for _ = 1, count do
+        if typeof(value) == "table" then
+            -- must convert to table to label value as an iterable
+            local value: Types.Record = value
+            value = Table.deepCopy(value)
+        end
 
-		table.insert(product, value)
-	end
+        table.insert(product, value)
+    end
 
-	return product
+    return product
 end
 
 function Table.enumerate<K, V>(container: Types.Table<V, K>, start: number?)
-	local key = nil
-	local enumeration = start or 0
+    local key = nil
+    local enumeration = start or 0
 
-	return function()
-		local nextKey, nextValue = next(container, key)
-		key = nextKey
-		enumeration += 1
+    return function()
+        local nextKey, nextValue = next(container, key)
+        key = nextKey
+        enumeration += 1
 
-		if nextKey ~= nil and nextValue ~= nil then
-			return enumeration, nextKey, nextValue
-		end
+        if nextKey ~= nil and nextValue ~= nil then
+            return enumeration, nextKey, nextValue
+        end
 
-		return
-	end
+        return
+    end
 end
 
 function Table.zip<T>(...: Types.Table)
-	local containers = { ... }
-	local totalContainers = #containers
-	local index = 0
-	local keys = {}
+    local containers = { ... }
+    local totalContainers = #containers
+    local index = 0
+    local keys = {}
 
-	return function()
-		local values = {}
-		index += 1
+    return function()
+        local values = {}
+        index += 1
 
-		for i = 1, totalContainers do
-			local container = containers[i]
-			local key = keys[i]
-			local nextKey, nextValue = next(container, key)
-			keys[i] = nextKey
+        for i = 1, totalContainers do
+            local container = containers[i]
+            local key = keys[i]
+            local nextKey, nextValue = next(container, key)
+            keys[i] = nextKey
 
-			table.insert(values, nextValue)
-		end
+            table.insert(values, nextValue)
+        end
 
-		return table.unpack(values)
-	end
+        return table.unpack(values)
+    end
 end
 
 local function keys<T>(container: Types.Table<any, T>, key: T?)
-	local nextKey: T? = next(container, key)
+    local nextKey: T? = next(container, key)
 
-	return nextKey
+    return nextKey
 end
 
 function Table.keys<T>(container: Types.Table<any, T>)
-	return keys, container, nil
+    return keys, container, nil
 end
 
 function Table.values<T>(container: Types.Table<T>)
-	local key = nil
+    local key = nil
 
-	return function()
-		local nextKey, nextValue = next(container, key)
-		key = nextKey
+    return function()
+        local nextKey, nextValue = next(container, key)
+        key = nextKey
 
-		return nextValue
-	end
+        return nextValue
+    end
 end
 
 type FilterCallback<T> = (element: T) -> boolean
 
 function Table.filter<T>(container: Types.Array<T>, filter: FilterCallback<T>): Types.Array<T>
-	local newContainer: Types.Array<T> = {}
+    local newContainer: Types.Array<T> = {}
 
-	for _, element in container do
-		if not filter(element) then
-			continue
-		end
+    for _, element in container do
+        if not filter(element) then
+            continue
+        end
 
-		table.insert(newContainer, element)
-	end
+        table.insert(newContainer, element)
+    end
 
-	return newContainer
+    return newContainer
+end
+
+function Table.defaults<T, From>(properties: From & Types.Table, defaults: T & Types.Table): T | Types.Table
+    local filled = {}
+
+    for key, value in defaults :: Types.Table do
+        local propertyFound = (properties :: Types.Table)[key]
+        filled[key] = if propertyFound ~= nil then propertyFound else value
+    end
+
+    return filled
 end
 
 return Table
