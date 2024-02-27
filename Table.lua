@@ -57,15 +57,19 @@ function Table.choice<Value>(container: Types.Table<Value>): Value
     return container[randomKey]
 end
 
-function Table.deepCopy<Key, Value>(container: Types.Table<Value, Key>): Types.Table<Value, Key>
-    local copy: Types.Table<Value, Key> = {}
+type DeepCopy =
+    (<Key, Value>(container: Types.Table<Value, Key>) -> Types.Table<Value, Key>)
+    & <Type>(container: Type) -> Type
+
+function doDeepCopy(container)
+    local copy = {}
 
     for key, value in container do
         if typeof(value) == "table" then
             -- must convert to table to label value as an iterable
             local value: Types.Table = value
 
-            value = Table.deepCopy(value)
+            value = doDeepCopy(value)
         end
 
         copy[key] = value
@@ -73,6 +77,8 @@ function Table.deepCopy<Key, Value>(container: Types.Table<Value, Key>): Types.T
 
     return copy
 end
+
+Table.deepCopy = Types.unsafeForceCast(doDeepCopy) :: DeepCopy
 
 function Table.produce<Value>(count: number, value: Value): Types.Array<Value>
     -- table.create but it adds n unique values instead of n references of the
