@@ -1,29 +1,51 @@
 {
     "env": {
-        "es2021": true,
-        "node": true
+        "es6": true
     },
-    "extends": "eslint:recommended",
-    "ignorePatterns": ["dist/"],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/stylistic",
+        "next/core-web-vitals",
+        "prettier"
+    ],
+    "ignorePatterns": [
+        "*.cjs",
+        "*.js",
+        ".next/",
+        "archive/",
+        "dist/",
+        "next.config.js",
+        "node_modules/",
+        "public/"
+    ],
+    "overrides": [
+        {
+            "extends": ["plugin:@typescript-eslint/disable-type-checked"],
+            "files": ["./*.js", "./*.jsx", "./*.mjs"]
+        }
+    ],
+    "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 2022,
-        "sourceType": "module"
+        "project": true
     },
+    "plugins": ["@typescript-eslint"],
     "root": true,
     "rules": {
-        "computed-property-spacing": "warn",
-        "linebreak-style": ["warn", "unix"],
-        "max-depth": ["warn", 3],
-        "no-inner-declarations": "off",
-        "no-unused-private-class-members": "warn",
-        "no-use-before-define": "error",
-        "object-curly-spacing": ["warn", "always"],
-        "operator-linebreak": ["warn", "after"],
-        "quotes": ["error", "double"],
-        "semi": ["warn", "always"],
-        "spaced-comment": "warn",
-        "indent": ["warn", 4, {
-            "VariableDeclarator": "first"
-        }]
+        "@typescript-eslint/ban-ts-comment": "off",
+        "@typescript-eslint/no-unused-vars": "error",
+        "import/no-anonymous-default-export": "off",
+        "no-console": "warn",
+        "no-control-regex": "off",
+        "no-unused-vars": "off",
+        "react-hooks/exhaustive-deps": "off",
+        "react/no-unescaped-entities": [
+            "warn",
+            {
+                "forbid": [">", "}"]
+            }
+        ],
+        "react/prop-types": "off",
+        "react/react-in-jsx-scope": "off"
     }
 }
