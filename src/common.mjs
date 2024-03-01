@@ -156,6 +156,11 @@ export function toTitleCase(text) {
 }
 
 
+export function formDataToJson(formData: FormData) {
+    return Object.fromEntries(formData.entries());
+}
+
+
 export let vmap = (iterable, callback) => iterable.map(value => callback(value));
 export default {
     addMultipleEventsListener,
@@ -164,6 +169,7 @@ export default {
     createInterval,
     createTimestamp,
     extractAsObject,
+    formDataToJson,
     format,
     isObjectEmpty,
     kmap,
@@ -172,5 +178,5 @@ export default {
     sleep,
     sleepUntil,
     toTitleCase,
-    vmap
+    vmap,
 };
