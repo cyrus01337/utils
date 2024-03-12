@@ -1,3 +1,5 @@
+import * as common from "@/common";
+
 // @ts-ignore: TODO: Fix complaint
 export * from "@/common";
 
@@ -13,3 +15,9 @@ export const quickResponseWithStatus: QuickResponseWithStatus = <Type extends ob
     payload?: Type,
 ): Response =>
     payload ? Response.json(payload, { status }) : new Response(payload ?? null, { status });
+
+export default {
+    ...common,
+
+    quickResponseWithStatus,
+};

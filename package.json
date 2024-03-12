@@ -1,7 +1,7 @@
 {
     "name": "utils",
     "description": "Handy dandies I can use across all projects",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "license": "MIT",
     "author": "cyrus01337",
     "type": "module",

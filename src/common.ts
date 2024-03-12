@@ -15,3 +15,9 @@ export function sleep(milliseconds: number): Promise<void> {
 export function formDataToJson<Type>(formData: FormData) {
     return Object.fromEntries(formData.entries()) as Type;
 }
+
+export default {
+    constructURLWithSearchParams,
+    sleep,
+    formDataToJson,
+};
