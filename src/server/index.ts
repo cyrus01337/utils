@@ -1,1 +1,14 @@
 export * as common from "@/common";
+
+interface QuickResponseWithStatus {
+    (status: number): Response;
+    (status: number, payload: null): Response;
+
+    <Type extends object>(status: number, payload: Type): Response;
+}
+
+export const quickResponseWithStatus: QuickResponseWithStatus = <Type extends object | null>(
+    status = 200,
+    payload?: Type,
+): Response =>
+    payload ? Response.json(payload, { status }) : new Response(payload ?? null, { status });
