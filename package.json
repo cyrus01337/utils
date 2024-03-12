@@ -8,10 +8,10 @@
     "engines": {
         "node": "18.x"
     },
+    "main": "./src/common.ts",
     "exports": {
-        ".": "./src/common/index.ts",
-        "./browser": "./src/browser/index.ts",
-        "./server": "./src/server/index.ts"
+        ".": "./src/common.ts",
+        "./*": "./src/*.ts"
     },
     "scripts": {
         "format": "prettier --write .",

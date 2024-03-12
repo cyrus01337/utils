@@ -1,4 +1,5 @@
-export * as common from "@/common";
+// @ts-ignore: TODO: Fix complaint
+export * from "@/common";
 
 interface QuickResponseWithStatus {
     (status: number): Response;

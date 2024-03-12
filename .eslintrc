@@ -14,10 +14,19 @@
     "overrides": [
         {
             "env": {
+                "browser": true,
+                "es6": true
+            },
+            "files": [
+                "./src/common.ts"
+            ]
+        },
+        {
+            "env": {
                 "browser": true
             },
             "files": [
-                "./src/browser/index.ts"
+                "./src/browser.ts"
             ]
         }
     ],
