@@ -1,6 +1,7 @@
 {
     "$schema": "https://json.schemastore.org/tsconfig",
     "compilerOptions": {
+        "baseUrl": ".",
         "forceConsistentCasingInFileNames": true,
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "module": "ESNext",

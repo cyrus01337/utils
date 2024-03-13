@@ -1,7 +1,7 @@
 {
     "name": "utils",
     "description": "Handy dandies I can use across all projects",
-    "version": "1.2.4",
+    "version": "1.2.6",
     "license": "MIT",
     "author": "cyrus01337",
     "type": "module",
@@ -9,7 +9,6 @@
     "engines": {
         "node": "18.x"
     },
-    "main": "./src/common.ts",
     "exports": {
         ".": "./src/common.ts",
         "./*": "./src/*.ts"

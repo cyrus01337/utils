@@ -1,5 +1,8 @@
+// @ts-ignore: TODO: Why is this import path causing issues when the other files work fine and
+// linting this as a package leads to no errors?
 import * as common from "@/common";
 
+// @ts-ignore
 export * from "@/common";
 
 interface QuickResponseWithStatus {
