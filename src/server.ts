@@ -1,9 +1,8 @@
-// @ts-ignore: TODO: Why is this import path causing issues when the other files work fine and
-// linting this as a package leads to no errors?
-import * as common from "@/common";
+import * as common from "./common";
 
-// @ts-ignore
-export * from "@/common";
+import type { Payload } from "./types";
+
+export * from "./common";
 
 interface QuickResponseWithStatus {
     (status: number): Response;
@@ -12,9 +11,12 @@ interface QuickResponseWithStatus {
     <Type extends object>(status: number, payload: Type): Response;
 }
 
-export const quickResponseWithStatus: QuickResponseWithStatus = <Type extends object | null>(
-    status = 200,
-    payload?: Type,
+export const quickResponseWithStatus: QuickResponseWithStatus = <
+    ResponsePayloadType extends Payload<Status>,
+    Status extends number = 200,
+>(
+    status: Status,
+    payload?: ResponsePayloadType | undefined,
 ): Response =>
     payload ? Response.json(payload, { status }) : new Response(payload ?? null, { status });
 

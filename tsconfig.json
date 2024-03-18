@@ -1,19 +1,18 @@
 {
     "$schema": "https://json.schemastore.org/tsconfig",
     "compilerOptions": {
+        // "allowImportingTsExtensions": true,
         "baseUrl": ".",
         "forceConsistentCasingInFileNames": true,
+        // "isolatedModules": true,
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "module": "ESNext",
         "moduleResolution": "Bundler",
         "noEmit": true,
-        "paths": {
-            "@/*": ["./src/*.ts"]
-        },
         "skipLibCheck": true,
         "strict": true,
         "target": "ESNext"
     },
     "exclude": ["node_modules/"],
-    "include": ["./src/**/*"]
+    "include": ["./src/**/*.ts"]
 }

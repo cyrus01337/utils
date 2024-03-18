@@ -1,6 +1,6 @@
-import * as common from "@/common";
+import * as common from "./common";
 
-export * from "@/common";
+export * from "./common";
 
 export function isOutOfBounds<Element extends HTMLElement>(element: Element) {
     return !!element.querySelector(":hover");
